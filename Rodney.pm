@@ -2072,6 +2072,7 @@ sub do_pubcmd_streak {
     my $curend     = '';
     my $games      = 0;
     my $cancont    = 0;
+    my $cancontlong = 0;
 
     db_connect($self);
     my $sth = $dbh->prepare("SELECT birthdate,deathdate,death FROM xlogfile WHERE name LIKE ".$dbh->quote($nick));
@@ -2088,9 +2089,13 @@ sub do_pubcmd_streak {
 		}
 		$curstreak++;
 		$cancont = 1;
+		if ($curstreak > $longstreak) {
+		    $cancontlong = 1;
+		}
 	    } else {
 		if ($curstreak > $longstreak) {
 		    ($longstreak, $longstart, $longend) = ($curstreak, $curstart, $curend);
+		    $cancontlong = 0;
 		}
 		($curstreak, $curstart, $curend) = (0, '', '');
 		$cancont = 0;
@@ -2108,11 +2113,11 @@ sub do_pubcmd_streak {
 
     if ($longstreak > 1) {
 	$msg = "$nick has ascended $longstreak games in a row, between $longstart and $longend";
-	$msg .= ", and can continue the streak" if ($cancont);
+	$msg .= ", and can continue the streak" if ($cancontlong);
 	$msg .= ".";
     } elsif ($longstreak == 1) {
 	$msg = "$nick has never ascended more than once in a row";
-	$msg .= " (but can still make it a streak)" if ($cancont);
+	$msg .= " (but can still make it a streak)" if ($cancontlong);
 	$msg .= ".";
     } elsif ($games) {
 	$msg = sprintf('%s has not ascended in %d game%s.', $nick, $games, $games == 1 ? '' : 's');
@@ -2325,6 +2330,7 @@ sub priv_and_pub_msg {
     }
     elsif ($msg =~ m/^!streak(\s+\S+\s*)?$/) {
 	my $plr = $1 || $nick;
+	$plr =~ s/^\s+//;
 	do_pubcmd_streak($self, $kernel, $channel, $plr);
     }
     elsif ($msg =~ m/^!asc(?:ensions?)?\s+(\S+)\s*$/i) {
