@@ -2060,6 +2060,58 @@ sub do_pubcmd_ascensions {
     $self->botspeak($kernel, $a, $channel);
 }
 
+sub do_pubcmd_streak {
+    my ($self, $kernel, $channel, $nick) = @_;
+    $nick =~ tr/A-Z/a-z/;
+
+    my $longstreak = 0;
+    my $longstart  = '';
+    my $longend    = '';
+    my $curstreak  = 0;
+    my $curstart   = '';
+    my $curend     = '';
+    my $games      = 0;
+
+    db_connect($self);
+    my $sth = $dbh->prepare("SELECT birthdate,deathdate,death FROM xlogfile WHERE name LIKE ".$dbh->quote($nick));
+    $sth->execute();
+
+    while (my $dbdata = $sth->fetchrow_hashref()) {
+
+	    $games++;
+	    if ($dbdata->{death} eq 'ascended') {
+		if ($curstreak == 0) {
+		    $curstart = $dbdata->{birthdate};
+		} else {
+		    $curend = $dbdata->{deathdate};
+		}
+		$curstreak++;
+	    } else {
+		if ($curstreak > $longstreak) {
+		    ($longstreak, $longstart, $longend) = ($curstreak, $curstart, $curend);
+		}
+		($curstreak, $curstart, $curend) = (0, '', '');
+	    }
+
+
+    }
+    db_disconnect();
+
+    if ($curstreak > $longstreak) {
+	($longstreak, $longstart, $longend) = ($curstreak, $curstart, $curend);
+    }
+
+    if ($longstreak > 1) {
+	$self->botspeak($kernel, "$nick has ascended $longstreak games in a row, between $longstart and $longend.", $channel);
+    } elsif ($longstreak == 1) {
+	$self->botspeak($kernel, "$nick has never ascended more than once in a row.", $channel);
+    } elsif ($games) {
+	$self->botspeak($kernel, sprintf('%s has not ascended in %d game%s.', $nick, $games, $games == 1 ? '' : 's'), $channel);
+    } else {
+	$self->botspeak($kernel, "No games for $nick.", $channel);
+    }
+}
+
 sub do_pubcmd_gamenum {
     my ($self, $kernel, $channel, $gamenum, $name) = @_;
     $name =~ tr/A-Z/a-z/ if (defined $name);
@@ -2259,6 +2311,10 @@ sub priv_and_pub_msg {
     elsif ($msg =~ m/^!games(?:by)?\s*$/i) {
 # !gamesby
 	do_pubcmd_gamesby($self,$kernel,$channel,$nick);
+    }
+    elsif ($msg =~ m/^!streak(\s+\S+\s*)?$/) {
+	my $plr = $1 || $nick;
+	do_pubcmd_streak($self, $kernel, $channel, $plr);
     }
     elsif ($msg =~ m/^!asc(?:ensions?)?\s+(\S+)\s*$/i) {
 # !ascension <name>
