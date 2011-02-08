@@ -2071,6 +2071,7 @@ sub do_pubcmd_streak {
     my $curstart   = '';
     my $curend     = '';
     my $games      = 0;
+    my $cancont    = 0;
 
     db_connect($self);
     my $sth = $dbh->prepare("SELECT birthdate,deathdate,death FROM xlogfile WHERE name LIKE ".$dbh->quote($nick));
@@ -2086,11 +2087,13 @@ sub do_pubcmd_streak {
 		    $curend = $dbdata->{deathdate};
 		}
 		$curstreak++;
+		$cancont = 1;
 	    } else {
 		if ($curstreak > $longstreak) {
 		    ($longstreak, $longstart, $longend) = ($curstreak, $curstart, $curend);
 		}
 		($curstreak, $curstart, $curend) = (0, '', '');
+		$cancont = 0;
 	    }
 
 
@@ -2101,15 +2104,23 @@ sub do_pubcmd_streak {
 	($longstreak, $longstart, $longend) = ($curstreak, $curstart, $curend);
     }
 
+    my $msg;
+
     if ($longstreak > 1) {
-	$self->botspeak($kernel, "$nick has ascended $longstreak games in a row, between $longstart and $longend.", $channel);
+	$msg = "$nick has ascended $longstreak games in a row, between $longstart and $longend";
+	$msg .= ", and can continue the streak" if ($cancont);
+	$msg .= ".";
     } elsif ($longstreak == 1) {
-	$self->botspeak($kernel, "$nick has never ascended more than once in a row.", $channel);
+	$msg = "$nick has never ascended more than once in a row";
+	$msg .= " (but can still make it a streak)" if ($cancont);
+	$msg .= ".";
     } elsif ($games) {
-	$self->botspeak($kernel, sprintf('%s has not ascended in %d game%s.', $nick, $games, $games == 1 ? '' : 's'), $channel);
+	$msg = sprintf('%s has not ascended in %d game%s.', $nick, $games, $games == 1 ? '' : 's');
     } else {
-	$self->botspeak($kernel, "No games for $nick.", $channel);
+	$msg = "No games for $nick.";
     }
+
+    $self->botspeak($kernel, $msg, $channel);
 }
 
 sub do_pubcmd_gamenum {
