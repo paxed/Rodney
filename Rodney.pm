@@ -2575,7 +2575,8 @@ sub parse_strvariables_param {
 	'$ROT13'      => \&paramstr_rot13,
 	'$TIMEFMT'    => \&paramstr_timefmt,
 	'$LG'         => \&paramstr_sqlquery_xlogfile,
-	'$RMPIPES'    => \&paramstr_rmpipes
+	'$RMPIPES'    => \&paramstr_rmpipes,
+	'$CALC'       => \&paramstr_math
 	);
 
     foreach my $tmp (keys %paramrepls) {
