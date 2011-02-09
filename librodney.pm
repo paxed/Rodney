@@ -83,7 +83,8 @@ sub paramstr_math {
 
     $str = "\$retval = (".$str.");";
 
-    eval $str or return "$@";
+    eval $str or $retval = "$@";
+    $retval =~ s/\n$//;
     return $retval;
 }
 
