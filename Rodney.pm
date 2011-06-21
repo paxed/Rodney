@@ -1894,7 +1894,7 @@ sub do_pubcmd_dbquery {
     # 7/1/2005 11:08AM: (Stevie-O) Prevent ?> flooding
     if (!$term_no && @a > $self->{'SpeakLimit'} && $sendto =~ /^#/) {
         # send this instead
-	@a = ("That entry is a little too long to send to a channel. Use ?? or ?< instead.");
+	@a = ("That entry is a little too long. See http://alt.org/nethack/Rodney/rodney-learn.php?s=".uri_escape($term));
     }
 
     if (lc $sendto ne lc $errsto) {
