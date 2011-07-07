@@ -2919,7 +2919,7 @@ sub on_msg {
 		    $self->botspeak($kernel, "Nothing is ignored", $nick);
 	    }
 	}
-	elsif ($msg =~ m/^!buglist\s*$/i) {
+	elsif ($msg =~ m/^!togglebuglist\s*$/i) {
 	    if ($self->{'CheckBug'} > 0) {
 		$self->{'CheckBug'} = 0;
 		$self->botspeak($kernel, "Buglist checking disabled.", $nick);
@@ -2929,7 +2929,7 @@ sub on_msg {
 		$self->botspeak($kernel, "Buglist checking enabled.", $nick);
 	    }
 	}
-	elsif ($msg =~ m/^!logfile\s*$/i) {
+	elsif ($msg =~ m/^!togglelogfile\s*$/i) {
 	    if ($self->{'CheckLog'} > 0) {
 		$self->{'CheckLog'} = 0;
 		$self->botspeak($kernel, "Logfile checking disabled.", $nick);
@@ -3046,11 +3046,11 @@ sub on_msg {
 	    }
 	}
 	elsif ($msg =~ m/^!die(.+)$/i) {
-	    $self->botspeak($kernel, "$msg") if (defined $1);
+	    $self->botspeak($kernel, "$1") if (defined $1);
 	    kill_bot();
 	}
 	elsif ($msg =~ m/^!help$/i) {
-	    $self->botspeak($kernel, "Commands: !die, !showmsg, !msg a b, !me a, !privme a b, !nick a, !say a, !id, !deid, !throttle [a b], !ignore [a b], !rmignore, !bones, !logfile, !buglist", $nick);
+	    $self->botspeak($kernel, "Commands: !die [msg], !showmsg, !msg a b, !me chan msg, !privme nick msg, !nick a, !say chan msg, !id, !deid, !throttle [a b], !ignore nick msgregexp, !rmignore n, !bones, !togglelogfile, !togglebuglist, !wiki, !join chan, !leave chan, !parsestr str, !parseargs str", $nick);
 	} else {
 	    pub_msg($self, $kernel, $nick, $nick, $msg);
 	}
