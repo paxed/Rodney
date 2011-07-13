@@ -369,7 +369,8 @@ sub mangle_sql_query {
 	num_achieves => "nachieves",
 	nachievements => "nachieves",
 	numachievements => "nachieves",
-	num_achievements => "nachieves"
+	num_achievements => "nachieves",
+	gametime => "turns"
 	);
 
     my %param_subst = (
