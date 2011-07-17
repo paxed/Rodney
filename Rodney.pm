@@ -943,7 +943,7 @@ sub whereis_players {
 #depth=29:dnum=0:hp=134:maxhp=134:turns=46326:score=343234:role=Caveman:race=human:gender=Mal:align=lawful:conduct=0xf88:amulet=0
 
     foreach (@players) {
-	next if ((defined $plr) && !(lc($_) =~ m/^\E$plr\Q$/));
+	next if ((defined $plr) && !(lc($_) eq $plr));
 	my $whereisfile = $self->{'WhereIsDir'}.$_.'.whereis';
 	open(WHEREISFILE, $whereisfile) || next;
 	my @whereisdata = <WHEREISFILE>;
@@ -974,7 +974,7 @@ sub whereis_players {
 	
     }
 
-    return "" if ($#data < 1);
+    return "" if (scalar(@data) < 1);
 
     $order =~ s/^--?// if (defined($order));
 
