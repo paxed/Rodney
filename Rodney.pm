@@ -2298,10 +2298,10 @@ sub priv_and_pub_msg {
         my $name = $arg[1];
 	do_pubcmd_seen($self,$kernel,$channel,$nick,$name);
     }
-    elsif ( $msg =~ m/^!message\s+(\S+)\s+(\S.+)$/i ) {
+    elsif ( $msg =~ m/^!(message|tell)\s+(\S+)\s+(\S.+)$/i ) {
 # !message nick text
-	my $target_nick = $1;
-	my $text = $2;
+	my $target_nick = $2;
+	my $text = $3;
 	$user_messages_db->leave_message($target_nick, $nick, $text);
 	$self->botspeak($kernel, "OK, I'll let $target_nick know.", $channel);
     }
