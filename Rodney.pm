@@ -1948,6 +1948,10 @@ sub do_pubcmd_dbsearch {
 	$self->botspeak($kernel, "This definition is sent to you by $nick.", $sendto, $donotice);
     }
 
+    if (@searchresult > $self->{'SpeakLimit'} && $sendto =~ /^#/) {
+	@searchresult = ("Search result is a little too long. See http://alt.org/nethack/Rodney/rodney-learn.php?s=".uri_escape($term));
+    }
+
     foreach $a (@searchresult) {
 	$self->botspeak($kernel, $a, $sendto, $donotice);
     }
