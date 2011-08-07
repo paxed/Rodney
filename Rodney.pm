@@ -18,6 +18,19 @@ use URI::Escape;
 use File::Basename;
 use IO::Socket::INET;
 
+
+use Config;
+$Config{useithreads} or die('Recompile Perl with threads to run this program.');
+use threads;
+use threads::shared;
+use Thread::Queue;
+
+my $querythread_input  = Thread::Queue->new(); # format: channel\tnick\tresult
+my @querythread_output :shared = (); # format: channel\tnick\tresult
+
+
+
+
 require Exporter;
 
 
@@ -140,6 +153,7 @@ sub run {
 
     $self->daemonize() if ($self->{'Daemonize'});
 
+    threads->create(\&sqlquery_subthread)->detach();
 
     POE::Component::IRC->spawn(alias => NICK)
 	|| croak "Cannot create new P::C::I object!\n";
@@ -180,7 +194,8 @@ sub run {
 		database_sync	=> "database_sync",
 		buglist_update	=> "buglist_update",
 		get_wiki_datagram => "on_wiki_datagram",
-		handle_wiki_data => "handle_wiki_datagrams"
+		handle_wiki_data => "handle_wiki_datagrams",
+		handle_querythread_out => "handle_querythread_output"
             }
         ]
     );
@@ -265,6 +280,7 @@ sub bot_start {
 
     $kernel->select_read( $socket, "get_wiki_datagram" );
     $kernel->delay('handle_wiki_data' => 20);
+    $kernel->delay('handle_querythread_out' => 10);
 }
 
 ############################# RODNEY STUFF
@@ -1660,6 +1676,35 @@ sub can_do_pub_cmd {
     return $return;
 }
 
+
+
+
+sub sqlquery_subthread {
+    my $query;
+    my $channel;
+    my $nick;
+    while (1) {
+	$query = $querythread_input->dequeue();
+	if ($query) {
+
+	    my @tmp = split(/\t/, $query);
+	    $channel = $tmp[0];
+	    $nick = $tmp[1];
+	    $query = $tmp[2];
+
+	    db_connect();
+	    my $str = do_sqlquery_xlogfile($channel, $nick, $query);
+	    db_disconnect();
+	    {
+		lock(@querythread_output);
+		push(@querythread_output, $channel."\t".$nick."\t".$str);
+	    }
+	}
+    }
+}
+
+
+
 sub paramstr_sqlquery_xlogfile {
     my $query = shift || "";
 
@@ -1816,11 +1861,13 @@ sub do_sqlquery_xlogfile {
 sub do_pubcmd_query_xlogfile {
     my ($self, $kernel, $channel, $nick, $query) = @_;
 
-    db_connect($self);
-    my $str = do_sqlquery_xlogfile($channel, $nick, $query);
-    db_disconnect();
+    $querythread_input->enqueue($channel."\t".$nick."\t".$query);
 
-    $self->botspeak($kernel, $str, $channel);
+#    db_connect($self);
+#    my $str = do_sqlquery_xlogfile($channel, $nick, $query);
+#    db_disconnect();
+
+#    $self->botspeak($kernel, $str, $channel);
 }
 
 sub do_pubcmd_version {
@@ -2823,6 +2870,20 @@ sub on_public {
     pub_msg($self, $kernel, $channel, $nick, $msg);
 }
 
+sub handle_querythread_output {
+    my ( $self, $kernel ) = @_[ OBJECT, KERNEL ];
+
+    {
+	lock(@querythread_output);
+	if (scalar(@querythread_output)) {
+	    my $str = pop(@querythread_output);
+	    my ($channel,$nick,$query) = split(/\t/, $str);
+	    $self->botspeak($kernel, $query, $channel);
+	}
+    }
+    $kernel->delay('handle_querythread_out' => 10);
+}
+
 my $privmsg_time = 0;
 my $privmsg_throttle = 10;
 
@@ -3185,6 +3246,7 @@ $SIG{'INT'} = \&kill_bot;
 $SIG{'HUP'} = \&kill_bot;
 
 sub kill_bot {
+
     $buglist_db->cache_write();
     database_sync();
     $seen_db->sync();
@@ -3216,6 +3278,7 @@ sub on_disco {
 
 #    $kernel->delay('keepalive' => undef);
 #    $kernel->delay('d_tick' => undef);
+
 
     $buglist_db->cache_write();
     database_sync();
