@@ -3,6 +3,8 @@ use warnings;
 
 use diagnostics;  # For development
 
+use Math::Expression::Evaluator;
+use Try::Tiny;
 use POSIX qw( strftime );
 
 
@@ -75,17 +77,10 @@ sub paramstr_rnd {
 
 # paramstr_math("3+(2*4)/2")
 sub paramstr_math {
-    my $str = shift || "";
+    my $expr = shift || "";
 
-    my $retval = 0;
-
-    return "err" if ($str =~ m/[^-+*\/0-9() ]$/);
-
-    $str = "\$retval = (".$str.");";
-
-    eval $str or $retval = "$@";
-    $retval =~ s/\n$//;
-    return $retval;
+    return unless $expr =~ /^[-\d\+\*\/\(\)]+$/;
+    return try { Math::Expression::Evaluator->new->parse($expr)->val };
 }
 
 
