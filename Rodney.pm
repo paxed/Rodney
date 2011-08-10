@@ -108,7 +108,7 @@ my $dbh;
 
 my @wiki_datagram_queue = ();
 
-
+my $trigger_counts = 0;
 
 use constant DATAGRAM_MAXLEN => 1024;
 
@@ -2822,6 +2822,13 @@ sub pub_msg {
 
 	if (@a > 0) {
 
+	    if ($trigger_counts > 0) {
+		$self->botspeak($kernel, "Too many triggers used, ignoring ".$msg, $nick, 1);
+		return;
+	    }
+
+	    $trigger_counts = $trigger_counts + 5;
+
 	    my $b = $a[rand(@a)];
 	    $b =~ s/^\S+\[\d+\]: //;
 	    $b = $self->parse_strvariables($channel, $nick, $cmdargs, $b);
@@ -2866,6 +2873,8 @@ sub on_public {
 	$self->bot_priv_msg($kernel, "[ignored] <$nick> $msg");
 	return;
     }
+
+    $trigger_counts-- if ($trigger_counts > 0);
 
     pub_msg($self, $kernel, $channel, $nick, $msg);
 }
