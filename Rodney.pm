@@ -1303,7 +1303,7 @@ sub userdata_name {
     $name =~ tr[a-zA-Z0-9][]cd;
 
     my $directory = "/opt/nethack/nethack.alt.org/dgldir/userdata/".lc(substr($name,0,1))."/";
-    my $xname = find_files($directory, qr/^\Q$name\E$/i);
+    my ($xname) = find_files($directory, qr/^\Q$name\E$/i);
     if (!$xname) {
 	$directory = "/opt/nethack/nethack.alt.org/dgldir/userdata/".uc(substr($name,0,1))."/";
 	return undef unless ($xname) = find_files($directory, qr/^\Q$name\E$/i);
