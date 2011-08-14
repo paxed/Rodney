@@ -195,7 +195,8 @@ sub run {
 		buglist_update	=> "buglist_update",
 		get_wiki_datagram => "on_wiki_datagram",
 		handle_wiki_data => "handle_wiki_datagrams",
-		handle_querythread_out => "handle_querythread_output"
+		handle_querythread_out => "handle_querythread_output",
+		handle_trigger_flood => "handle_trigger_flood_countdown"
             }
         ]
     );
@@ -281,6 +282,7 @@ sub bot_start {
     $kernel->select_read( $socket, "get_wiki_datagram" );
     $kernel->delay('handle_wiki_data' => 20);
     $kernel->delay('handle_querythread_out' => 10);
+    $kernel->delay('handle_trigger_flood' => 10);
 }
 
 ############################# RODNEY STUFF
@@ -2851,6 +2853,12 @@ sub pub_msg {
     }
 }
 
+
+sub handle_trigger_flood_countdown {
+    my ( $self, $kernel ) = @_[ OBJECT, KERNEL ];
+    $trigger_counts-- if ($trigger_counts > 0);
+    $kernel->delay('handle_trigger_flood' => 10);
+}
 
 # Handle public events
 sub on_public {
