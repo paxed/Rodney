@@ -131,7 +131,24 @@ sub db_disconnect {
 
 sub player_logfile {
     my ($self, $regex) = @_;
-    my @lines = split(/\n/, `grep -i '$regex' $self->{'nh_logfile'}`);
+    db_connect($self);
+
+    my @lines;
+
+    my $sth = $dbh->prepare("SELECT * FROM xlogfile WHERE name like ".$dbh->quote($regex));
+    $sth->execute();
+
+    while (my $dbdata = $sth->fetchrow_hashref()) {
+	my @tmpl;
+	foreach my $k (keys %$dbdata) {
+	    push(@tmpl, $k.'='.$dbdata->{$k});
+	}
+	push(@lines, join(":", @tmpl));
+    }
+
+    db_disconnect();
+
+#    my @lines = split(/\n/, `grep -i '$regex' $self->{'nh_logfile'}`);
     return @lines;
 }
 
@@ -1375,16 +1392,11 @@ sub highscore_query_nick {
 
     if (!@return) # no high score for $player
     {
-      my @games = $self->player_logfile('name='.$player.':');
-      my $high = undef;
-      foreach my $game (@games)
-      {
-        my %dat = parse_xlogline($game);
-        next if defined($high) && $dat{'points'} <= $high;
-        $dat{'name'} =~ tr/A-Z/a-z/;
-        next unless $dat{'name'} eq $player;
-        $high = $dat{'points'};
-      }
+	db_connect($self);
+	my $sth = $dbh->prepare("SELECT max(points) FROM xlogfile WHERE name=".$dbh->quote($player));
+	$sth->execute();
+	my ($high) = $sth->fetchrow_array();
+	db_disconnect();
 
       if (!defined $high)
       {
@@ -2193,7 +2205,7 @@ sub do_pubcmd_gamenum {
     my $speakstr;
 
     if ($name) {
-	my @lines = $self->player_logfile('name='.$name.':');
+	my @lines = $self->player_logfile($name);
 	my $numlines = @lines;
 	if ($gamenum > $numlines) {
 	    $speakstr = "$name has played only $numlines games so far.";
