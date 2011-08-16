@@ -2185,6 +2185,13 @@ sub do_pubcmd_streak {
 	$msg = "$nick has ascended $longstreak games in a row, between $longstart and $longend";
 	$msg .= ", and can continue the streak" if ($cancontlong);
 	$msg .= ".";
+	if ($cancont && !$cancontlong) {
+	    if ($curstreak == 1) {
+		$msg .= " $nick\'s latest game ended in an ascension.";
+	    } else {
+		$msg .= " $nick is currently on a streak of $curstreak games.";
+	    }
+	}
     } elsif ($longstreak == 1) {
 	$msg = "$nick has never ascended more than once in a row";
 	$msg .= " (but can still make it a streak)" if ($cancontlong);
@@ -3144,12 +3151,16 @@ sub on_msg {
 		$self->botspeak($kernel, "Showing privmsgs to you.", $nick);
 	    }
 	}
-	elsif ($msg =~ m/^!die(.+)$/i) {
-	    $self->botspeak($kernel, "$1") if (defined $1);
+	elsif ($msg =~ m/^!triggerflood(\s.+)?$/i) {
+	    $trigger_counts = scalar(paramstr_trim($1)) if ($1);
+	    $self->botspeak($kernel, "Trigger flood protection count: $trigger_counts", $nick);
+	}
+	elsif ($msg =~ m/^!die(\s.+)?$/i) {
+	    $self->botspeak($kernel, paramstr_trim($1)) if ($1);
 	    kill_bot();
 	}
 	elsif ($msg =~ m/^!help$/i) {
-	    $self->botspeak($kernel, "Commands: !die [msg], !showmsg, !msg a b, !me chan msg, !privme nick msg, !nick a, !say chan msg, !id, !deid, !throttle [a b], !ignore nick msgregexp, !rmignore n, !bones, !togglelogfile, !togglebuglist, !wiki, !join chan, !leave chan, !parsestr str, !parseargs str", $nick);
+	    $self->botspeak($kernel, "Commands: !die [msg], !showmsg, !msg a b, !me chan msg, !privme nick msg, !nick a, !say chan msg, !id, !deid, !throttle [a b], !ignore nick msgregexp, !rmignore n, !bones, !togglelogfile, !togglebuglist, !wiki, !join chan, !leave chan, !parsestr str, !parseargs str, !triggerflood [n]", $nick);
 	} else {
 	    pub_msg($self, $kernel, $nick, $nick, $msg);
 	}
