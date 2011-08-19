@@ -2327,6 +2327,9 @@ sub priv_and_pub_msg {
 # !lg *
 	do_pubcmd_query_xlogfile($self, $kernel, $channel, $nick, $1);
     }
+    elsif ($msg =~ m/^!lg\s*$/i) {
+	do_pubcmd_query_xlogfile($self, $kernel, $channel, $nick, $nick);
+    }
     elsif ( $msg =~ m/^!version$/i ) {
 # !version
 	do_pubcmd_version($self, $kernel, $channel);
