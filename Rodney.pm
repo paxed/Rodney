@@ -2381,8 +2381,14 @@ sub priv_and_pub_msg {
 # !message nick text
 	my $target_nick = $2;
 	my $text = $3;
-	$user_messages_db->leave_message($target_nick, $nick, $text);
-	$self->botspeak($kernel, "OK, I'll let $target_nick know.", $channel);
+	if (lc($nick) eq lc($target_nick)) {
+	    $self->botspeak($kernel, "$nick: Tell yourself.", $channel);
+	} elsif (lc($self->{'Nick'}) eq lc($target_nick)) {
+	    $self->botspeak($kernel, "$nick: Got it.", $channel);
+	} else {
+	    $user_messages_db->leave_message($target_nick, $nick, $text);
+	    $self->botspeak($kernel, "OK, I'll let $target_nick know.", $channel);
+	}
     }
     elsif ( $msg =~ m/^!messages?\s*$/i ) {
 # !message or !messages
