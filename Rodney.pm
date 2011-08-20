@@ -2286,7 +2286,7 @@ sub do_pubcmd_players {
 sub do_pubcmd_lvlfiles {
     my ($self, $kernel, $channel, $name) = @_;
     my $username = $name;
-    my $findname = '^1031'.$username.'\.[0-9]+$';
+    my $findname = '^5'.$username.'\.[0-9]+$';
     my @files = find_files($self->{'NHLvlFiles'}, $findname);
 
     if ($#files < 0) {
@@ -2294,6 +2294,23 @@ sub do_pubcmd_lvlfiles {
     } else {
 	my $nlvlfiles = $#files + 1;
 	$self->botspeak($kernel, "$name has $nlvlfiles level file". (($nlvlfiles > 1) ? "s" : ""), $channel);
+    }
+}
+
+sub do_pubcmd_savefiles {
+    my ($self, $kernel, $channel, $name) = @_;
+    my $username = $name;
+    my $findname = '^5'.$username.'\.gz$';
+    my $savedir = '/opt/nethack/nethack.alt.org/nh343/var/save/';
+    my @files = find_files($savedir, $findname);
+
+    if ($#files < 0) {
+	$self->botspeak($kernel, "No save file for user $name", $channel);
+    } else {
+	my $ftime = (stat($savedir.$files[0]))[9];
+	my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime($ftime);
+	my $ret = sprintf("%04d%02d%02d %02d:%02d:%02d", ($year+1900), ($mon+1), $mday, $hour,$min,$sec);
+	$self->botspeak($kernel, "$name has a save file, last updated at $ret", $channel);
     }
 }
 
@@ -2487,7 +2504,7 @@ sub priv_and_pub_msg {
 	    }
 	}
 	$self->botspeak($kernel, $plrs, $channel);
-    }
+    } 
     elsif ($msg =~ m/^!lvlfiles\s+(\S+)$/i) {
 # !lvlfiles <name>
 	do_pubcmd_lvlfiles($self,$kernel,$channel, $1);
@@ -2495,6 +2512,14 @@ sub priv_and_pub_msg {
     elsif ($msg =~ m/^!lvlfiles\s*$/i) {
 # !lvlfiles
 	do_pubcmd_lvlfiles($self,$kernel,$channel, $nick);
+    }
+    elsif ($msg =~ m/^!save\s+(\S+)$/i) {
+# !save <name>
+	do_pubcmd_savefiles($self,$kernel,$channel, $1);
+    }
+    elsif ($msg =~ m/^!save\s*$/i) {
+# !save
+	do_pubcmd_savefiles($self,$kernel,$channel, $nick);
     }
     elsif (($msg =~ m/^!rc(?:file)?\s+(\S+)/i) ||
 	   ($msg =~ m/^!nethackrc\s+(\S+)/i)) {
