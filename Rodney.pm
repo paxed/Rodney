@@ -2701,6 +2701,7 @@ sub parse_strvariables {
     my $rnd_align_l = $nh_aligns_long[rand(@nh_aligns_long)];
     my $rnd_gender_l = $nh_genders_long[rand(@nh_genders_long)];
     my $uptime = sprintf("%d Days, %02d:%02d:%02d", (gmtime(time() - $^T))[ 7, 2, 1, 0 ]);
+    my $serveruptime = sprintf("%d Days, %02d:%02d:%02d", (gmtime((split(/\./, `cat /proc/uptime`))[0]))[ 7, 2, 1, 0 ]);
     my $zorkmid = ((rand(2) == 0) ? 'heads' : 'tails');
     my @curr_players = $self->player_list();
     my $rnd_player = $curr_players[rand(@curr_players)];
@@ -2731,6 +2732,7 @@ sub parse_strvariables {
 	'$LALIGN'  => $rnd_align_l,
 	'$LGENDER' => $rnd_gender_l,
 	'$UPTIME'  => $uptime,
+	'$SERVERUPTIME'  => $serveruptime,
 	'$COIN'    => $zorkmid,
 	'$PLAYER'  => $rnd_player,
 	'$NPLAYERS' => scalar(@curr_players),
