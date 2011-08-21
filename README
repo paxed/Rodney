@@ -1,2 +1,30 @@
 
 This is the IRC bot Rodney, as used on FreeNode's #NetHack.
+
+
+Requirements:
+-------------
+# Need to run these as root.
+
+cpan -i YAML
+cpan -fi POE
+cpan -i POE::Component::IRC
+cpan -i URI::Escape
+cpan -i Math::Expression::Evaluator
+cpan -i Try::Tiny
+cpan -i Thread::Queue
+apt-get install bsdgames  # for pom
+
+
+Other Files:
+------
+./data/learn.dat         - !learn database
+./data/bugcache.txt      - cached data for !bug, ass scraped from nethack.org
+./data/messages.db       - sqlite db for !message
+./data/nh343/            - contains the nethack 3.4.3 source files (for !grepsrc)
+./data/nh343monsters.txt - contains monster names, in plain text, one on each line
+./data/nh343objects.txt  - same, but for object names
+./data/seen.db           - sqlite db for !seen
+./log/bot.log
+./log/error.log
+./log/channels/          - contains one file for each channel the bot is in, eg. #nethack.log
