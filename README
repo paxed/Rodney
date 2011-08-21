@@ -19,7 +19,7 @@ apt-get install bsdgames  # for pom
 Other Files:
 ------
 ./data/learn.dat         - !learn database
-./data/bugcache.txt      - cached data for !bug, ass scraped from nethack.org
+./data/bugcache.txt      - cached data for !bug, as scraped from nethack.org
 ./data/messages.db       - sqlite db for !message
 ./data/nh343/            - contains the nethack 3.4.3 source files (for !grepsrc)
 ./data/nh343monsters.txt - contains monster names, in plain text, one on each line
