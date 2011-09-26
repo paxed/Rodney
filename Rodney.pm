@@ -358,7 +358,7 @@ sub mangle_sql_query {
 		  "align0"
 	);
 
-    my @all_param_fields = (@fields, "max", "min", "g", "gmax", "gmin", "hide", "skip");
+    my @all_param_fields = (@fields, "max", "min", "g", "gmax", "gmin", "hide", "skip", "limit");
 
     my %field_renames = (
 	original_gender => "gender0",
@@ -644,6 +644,17 @@ sub mangle_sql_query {
 		    if ($o eq "=") {
 			if ($d =~ m/^\d+$/) {
 			    $skip = $d;
+			} else {
+			    $errorstr = "'".$f."' accepts only number as parameter.";
+			}
+		    } else {
+			$errorstr = "'".$f."' accepts only '='.";
+		    }
+		} elsif ($f eq "limit") {
+		    if ($o eq "=") {
+			if ($d =~ m/^\d+$/) {
+			    $sqllimit = $d;
+			    $sqllimit = 10 if ($sqllimit > 10);
 			} else {
 			    $errorstr = "'".$f."' accepts only number as parameter.";
 			}
