@@ -1762,6 +1762,7 @@ sub do_sqlquery_xlogfile {
     my ($channel, $nick, $query) = @_;
 
     my $show_dump = 0;
+    my $show_ttyrec = 0;
     my $offset = 0;
 
     my @ret;
@@ -1770,6 +1771,10 @@ sub do_sqlquery_xlogfile {
 	$show_dump = 1;
 	$query =~ s/\s?-?-dump\s/ /i;
 	$query = $query . " starttime name"; # we need starttime and name to show dumps
+    } elsif ($query =~ m/\s?-?-ttyrec\s/i) {
+	$show_ttyrec = 1;
+	$query =~ s/\s?-?-ttyrec\s/ /i;
+	$query = $query . " starttime name";
     }
 
     if ($query =~ m/\s?-?-count\s/i) {
@@ -1840,6 +1845,27 @@ sub do_sqlquery_xlogfile {
 			    $got_no_dump = 1;
 			}
 		    }
+		} elsif ($show_ttyrec) {
+		    my $ttyrecfile = fixstring("/opt/nethack/nethack.alt.org/dgldir/userdata/%U/%u/ttyrec/%T.ttyrec", %$dbdata);
+		    if (-e "$ttyrecfile") {
+			next if ($count_dumps >= 1);
+			my $url = fixstring("http://alt.org/nethack/userdata/%u/ttyrec/%T.ttyrec", %$dbdata);
+			push(@ret, $url);
+			$count_dumps++;
+		    } else {
+			my $ttyrecfilebz2 = $ttyrecfile.".bz2";
+			if (-e "$ttyrecfilebz2") {
+			    next if ($count_dumps >= 1);
+			    my $url = fixstring("http://alt.org/nethack/userdata/%u/ttyrec/%T.ttyrec.bz2", %$dbdata);
+			    push(@ret, $url);
+			    $count_dumps++;
+			} else {
+			    if (!$got_no_dump) {
+				push(@ret, "Sorry, no dump file found for a game by ".$dbdata->{'name'}.".");
+				$got_no_dump = 1;
+			    }
+			}
+		    }
 		}
 
 		my %dbl;
@@ -1856,7 +1882,7 @@ sub do_sqlquery_xlogfile {
 		$str = $str . ($nresults+$offset).") ".join(",", @tmpdbl);
 	    }
 
-	    if (!$show_dump) {
+	    if (!$show_dump && !$show_ttyrec) {
 		if ($nresults) {
 		    push(@ret, $dat{"fields"}.": ".$str);
 		} else {
