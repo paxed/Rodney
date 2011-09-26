@@ -140,6 +140,31 @@ sub paramstr_unescape {
     return $s;
 }
 
+# positive integer
+sub paramstr_isint {
+    my $s = shift || "";
+    return "1" if ($s =~ m/^[0-9]+$/);
+    return "0";
+}
+# positive or negative integer
+sub paramstr_isnum {
+    my $s = shift || "";
+    return "1" if ($s =~ m/^[+-]?[0-9]+$/);
+    return "0";
+}
+# alphabetic letter (a-zA-Z)
+sub paramstr_isalpha {
+    my $s = shift || "";
+    return "1" if ($s =~ m/^[a-zA-Z]+$/);
+    return "0";
+}
+# alpha or numeric letter (a-zA-Z0-9)
+sub paramstr_isalphanum {
+    my $s = shift || "";
+    return "1" if ($s =~ m/^[a-zA-Z0-9]+$/);
+    return "0";
+}
+
 # paramstr_replacestr("a|b|abc") -> "bbc"
 sub paramstr_replacestr {
     my $str = shift || "";

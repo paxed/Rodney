@@ -2678,6 +2678,7 @@ sub log_channel_msg_flush {
 
 
 # paramstr_if("str_a|str_b|do_if_equal|do_if_not_equal")
+# paramstr_if("integer_boolean_value|do_if_non-zero|do_if_zero")
 sub paramstr_if {
     my $str = shift;
     if ($str =~ m/^(.+)\|(.*)\|(.*)\|(.*)$/) {
@@ -2686,6 +2687,15 @@ sub paramstr_if {
 	my $do_eq = $3 || "";
 	my $do_ne = $4 || "";
 	if ($stra eq $strb) {
+	    return parse_strvariables_param($do_eq);
+	} else {
+	    return parse_strvariables_param($do_ne);
+	}
+    } elsif ($str =~ m/^(.*)\|(.*)\|(.*)$/) {
+	my $bool = int $1;
+	my $do_eq = $2 || "";
+	my $do_ne = $3 || "";
+	if ($bool) {
 	    return parse_strvariables_param($do_eq);
 	} else {
 	    return parse_strvariables_param($do_ne);
@@ -2738,7 +2748,11 @@ sub parse_strvariables_param {
 	'$RMPIPES'    => \&paramstr_rmpipes,
 	'$CALC'       => \&paramstr_math,
 	'$ESCAPE'     => \&paramstr_escape,
-	'$UNESCAPE'   => \&paramstr_unescape
+	'$UNESCAPE'   => \&paramstr_unescape,
+	'$ISNUM'      => \&paramstr_isnum,
+	'$ISINT'      => \&paramstr_isint,
+	'$ISALPHA'    => \&paramstr_isalpha,
+	'$ISALNUM'    => \&paramstr_isalphanum
 	);
 
     foreach my $tmp (keys %paramrepls) {

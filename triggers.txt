@@ -66,7 +66,9 @@ $CHOICE(...)	   Accepts a pipe-delimited list of strings, and returns one of the
 		   Each string can be prepended with "N*" to multiply the weight for that string, eg. "$CHOICE(10*foo|bar)".
 $URLENC(...)	   Encode the parameter for URL usage.
 $ROT13(...)	   Encode the parameter with rot13.
-$IF(...)	   Takes 4 parameters, separated by a pipe. if param1 equals param2, shows param3, else shows param4.
+$IF(...)	   Takes either 3 or 4 parameters, separated by a pipe.
+		   3 parameters: If param1 is non-zero, show param2, else show param3.
+		   4 parameters: If param1 equals param2, shows param3, else shows param4.
 $RNDCHAR(...)	   like $CHAR, but can be given a role as a parameter, eg. "$RNDCHAR(Wiz)"
 $REPLACESTR(...)   Takes 3 parameters, separated by a pipe. Replaces all occurrences of param1 in param3 with param2.
 $TIMEFMT(...)	   Use strftime(3) to display the current time.
@@ -75,6 +77,11 @@ $RMPIPES(...)	   Replaces the pipe characters with spaces.
 $ESCAPE(...)       Escapes pipe characters so they don't interfere with other commands.
 $UNESCAPE(...)     Replaces escaped pipe characters with pipes.
 $CALC(...)         Evaluate parameter. Only accepts simple integer values and +, -, * and /, for example "$CALC(1+(2*3)/4)"
+
+$ISNUM(...)	   Returns 1 if parameter contains only digits, else returns 0.
+$ISINT(...)	   Returns 1 if parameter contains only digits and optionally starts with plus or minus. Otherwise returns 0.
+$ISALPHA(...)	   Returns 1 if parameter contains only a-zA-Z, else returns 0
+$ISALNUM(...)	   Returns 1 if parameter contains only a-zA-Z0-9, else returns 0
 
 Special commands:
 
