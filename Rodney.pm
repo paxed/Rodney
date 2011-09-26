@@ -2762,7 +2762,7 @@ sub parse_strvariables_param {
 	 my $inner  = get_inner_str($after);
 	 my $suffix = substr($after, length($inner)+2); # +2 for parenthesis
          my $middle = &{ $paramrepls{$tmp} }(parse_strvariables_param($inner));
-         $b = $prefix.$middle.$suffix;
+         $b = $prefix . ($middle ? $middle : '') . $suffix;
 	}
     }
     return $b;

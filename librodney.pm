@@ -79,7 +79,7 @@ sub paramstr_rnd {
 sub paramstr_math {
     my $expr = shift || "";
 
-    return unless $expr =~ /^[-\d\+\*\/\(\)]+$/;
+    return 0 unless $expr =~ /^[-\d\+\*\/\(\)]+$/;
     return try { Math::Expression::Evaluator->new->parse($expr)->val };
 }
 
@@ -341,6 +341,7 @@ sub makeplur {
 
     if ($s =~ m/[mMlL]ouse$/) {
 	$s =~ s/ouse$/ice/;
+	return $s.$excess;
     }
 
     if ($s =~ m/matzoh$/ || $s =~ m/matzah/) {
