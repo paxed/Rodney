@@ -1,0 +1,179 @@
+
+Short !lg help:
+---------------
+
+This is a command to query the xlogfile database via Rodney the IRC bot.
+
+!lg <name> <field><operator><value> ...
+
+<name> is an optional player name. It matches the name exactly.
+  It can be negated by prefixing with an exclamation mark (!),
+  in which case it will match everyone but that player.
+  It can also be "*" to match everyone, or "." to match the irc nick
+  of the person issuing the !lg command.
+
+<field> can be one of
+    	          "version",
+                  "points"  (also alias "score"),
+                  "deathdnum" (also alias "dungeon"),
+                  "deathlev",
+                  "maxlvl",
+                  "hp",
+                  "maxhp",
+                  "deaths" (alias: "numdeaths"),
+                  "deathdate" (also components "deathyear", "deathmonth" and "deathday"),
+                  "birthdate" (also components "birthyear", "birthmonth" and "birthday"),
+                  "uid",
+                  "role"  (also alias "class"),
+                  "race",
+                  "gender",
+                  "align",
+                  "name",
+                  "death"    (alias: "killer"),
+                  "conduct"  (also alias "conducts"),
+		  "nconducts",  (alias: "numconducts"),
+                  "turns",
+                  "achieve"  (also alias "achievement"),
+		  "nachieve",  (alias: "numachieves"),
+                  "realtime",
+                  "starttime",
+                  "endtime",
+                  "gender0" (also aliases "orig_gender", etc),
+                  "align0"  (also aliases "orig_align", etc)
+
+<operator> can be one of "=~", "=", ">", "<", "<=", ">=", "!=", "<>" or ":=".
+           "~=" is an alias of "=~", and "==" is an alias of "=".
+           ":=" is an equivalence between two fields, eg. "deathdate:=birthdate"
+
+<value> can be any string (with no spaces) or a number.
+
+
+
+-Sorting: You can affect the sorting of the results with "max" and "min".
+ They take the equivalence operator and a field name as a value.
+ You can use more than one sorting method per query, eg. "max=hp min=points"
+ By default queries are sorted by score, descending.
+
+-Conduct: The "conduct" field accepts "=" and "!=" operators, and following values:
+        "foodless"    (alias "food"),
+        "vegan",
+        "vegetarian",
+        "atheist"     (alias "godless"),
+        "weaponless   (alias "weapon"),
+        "pacifist"    (aliases "paci", "pac"),
+        "illiterate"  (aliases "illit", "ill"),
+        "polypiles",
+        "polyself",
+        "wishing"     (alias "wish"),
+        "artiwishing" (alias "arti"),
+        "genocide"    (alias "geno")
+   The values can be combined with a pipe or ampersand, for example:
+   "conduct=genocide&pacifist"
+
+-Achievement: The "achieve" field accepts "=" and "!=" operators, and following values:
+        "get_bell"           (alias: "bell"),
+        "enter_gehennom"     (alias: "gehennom", "hell"),
+        "get_candelabrum"    (alias: "candelabrum"),
+        "get_book"           (alias: "book"),
+        "perform_invocation" (alias: "invocation"),
+        "get_amulet"         (alias: "amulet"),
+        "entered_planes"     (alias: "endgame", "planes"),
+        "entered_astral"     (alias: "astral", "astral_plane"),
+        "ascended"           (alias: "ascension", "asc"),
+        "get_luckstone"      (alias: "luckstone"),
+        "finish_sokoban"     (alias: "sokoban"),
+        "killed_medusa"      (alias: "medusa")
+   The values can be combined with a pipe or ampersand, for example:
+   "achieve=sokoban&medusa"
+
+-Death Dungeon: The "deathdnum" field accepts a number, or following values:
+      "dod"       (alias "dungeons"),
+      "gehennom"  (alias "hell"),
+      "mines",
+      "quest",
+      "sokoban"   (alias "soko"),
+      "ludios"    (alias "fort_ludios"),
+      "vlad",
+      "planes",   (alias "plane"),
+      "astral",   (alias "astral_plane"),
+      "water",    (alias "water_plane"),
+      "fire",     (alias "fire_plane"),
+      "air",      (alias "air_plane"),
+      "earth",    (alias "earth_plane")
+
+-Death Level:  The "deathlev" field accepts a number, or a name of one of the planes,
+ as above.
+
+-Death Reason:  The value supplied to "death" field does some string mangling:
+ All underscores (_) are replaced with spaces,
+ all full stops (.) and percentages (%) match any one character, and
+ all asterisks (*) match zero or more of any characters.
+
+-Realtime:  The realtime-field accepts values in "1h2m3s" format, or plain
+ seconds. eg. "!lg * max=realtime realtime<=3h"
+
+-The operator "=~" is special and accepts values separated by a pipe;
+ the query will match any one of the values. For example:
+ "!lg * death=~escaped|quit"
+
+-Displaying fields: Any valid field names -- that come after the player name -- listed
+ without an operator and a value are shown in the query results.
+ For example: "!lg * hp maxhp"
+ To prevent a field from showing up in the result listing, use "hide=field"
+
+ It's also possible to display the following aggregate functions of fields:
+ "avg", "count", "max", "min", "sum". For example: "!lg * won avg(turns)"
+
+-Valid 3-character names for race, role, gender and alignment -- that come after
+ the player name -- separated by spaces are considered.  Prefixing any of those
+ with an exclamation mark (!) will negate it.
+
+-Fields that accept a date ("birthdate", "deathdate", "starttime" and "endtime")
+ can also accept "today" as a value.
+
+-Aliases: There are some aliases that can be used:
+ "ascended" and "won"  equal to "death=ascended",
+ "quit" is equal to "death=quit",
+ "escaped" is equal to "death=escaped", and
+ "escaped|quit" or "quit|escaped" matches either,
+ "character" is equal to "role race gender align", or displaying those fields in that order.
+
+-Dumpfile: You can get an URLs to the dumpfiles with "-dump".
+ For example: "!lg -dump * won max=turns"
+ Note: Games played before March 18th 2008 do not have dump files.
+ To ensure you get a game with a dumpfile, add "starttime>0"
+
+-TTYREC files: You can get an URL to the game ttyrec file with "-ttyrec".
+ For example: "!lg -ttyrec * won min=score starttime>0"
+
+-Number of matches: use "-count" to get the number of matching entries,
+ for example: "!lg -count * won"
+
+-Grouping: You can "group" results with "g", "gmax" or "gmin".
+ For example "!lg * won g=race" would list top counts of winning races.
+ "gmax" is equal to "g" and "gmin" reverses the sorting.
+
+-Skipping entries: You can use "skip=N" to skip the first N entries,
+ for example "!lg * skip=5"
+
+-Limiting entries: You can limit output with "limit=N" to N entries,
+ for example "!lg * won limit=1"
+
+
+Examples:
+---------
+
+!lg * won						List top 5 highest scoring people who have ascended.
+!lg * deathlev=air					List top 5 of people who died on the Plane of Air
+!lg * max=turns						List top 5 people who used most turns.
+!lg * conduct conduct=geno|wish			     	List top 5 of people with genocideless and wishless, and their exact conducts.
+!lg * birthdate:=deathdate max=realtime realtime>=0
+!lg . wiz hum mal neu					List top 5 of your wiz-hum-mal-neu characters.
+!lg dtype !wiz mal law					List dtype's top 5 of non-wizard male lawful characters.
+!lg !mrchan won	   					List top 5 ascenders, excluding mrchan.
+!lg * won g=race					List top10 winning races.
+!lg . g=align						List your top played alignments.
+!lg * won g=deathdate					List top5 dates with most ascensions.
+!lg * won max=deathdate g=deathdate			List most recent dates and the number of ascensions on those dates.
+!lg * skip=5						List top players with most scores, starting from place 6.
+!lg * avg(turns) won                                    Display the average number of turns for ascension.

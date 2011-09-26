@@ -1,0 +1,83 @@
+
+Rodney triggers:
+
+A trigger is created by adding an entry into the learndb with the entry
+name in the format "#nethack:foo" (more generally, "#irc_channel:foo").
+When Rodney sees the text "foo" in the channel #nethack, it will output
+one of the definitions, chosen at random, for that entry.
+
+For example:
+
+!learn add #nethack:foo Hello!
+
+<paxed> foo
+<Rodney> Hello!
+
+
+----
+
+You can use special commands in the trigger definitions. The commands are case sensitive.
+Commands with parameters can be nested.
+
+Simple commands:
+
+$ARG	 	   Returns one of the arguments given to the trigger, chosen at random, or
+                   nick of the person issuing the trigger if no args.
+$ARGS    	   Returns all of the arguments given to the trigger, or nick or the person issuing the trigger if no args.
+		   Pipe characters in both $ARG and $ARGS are escaped by default, so they don't interfere with other commands.
+$NICK		   The nick of the user who triggered the message.
+$SELF	 	   The bot's name (Usually "Rodney").
+$CHAN	 	   Channel where the trigger happened.
+
+$CHAR	 	   Random valid NetHack character type, eg. "Wiz-Elf-Mal-Cha"
+$RNDOBJ		   Random simple NetHack object, eg. "spellbook of knock"
+$RNDMON		   Random NetHack monster, eg. "zruty"
+$BUC		   One of "blessed", "uncursed" or "cursed", randomly chosen.
+$ROLE		   One of the roles, eg. "wiz". Use $LROLE for the full name, eg. "wizard".
+$RACE		   One of the races, eg. "gno". Use $LRACE for the full name, eg. "gnome".
+$ALIGN		   One of the alignments, eg. "cha". Use $LALIGN for the full name, eg. "chaotic".
+$GENDER		   Either of the genders, "mal" or "fem". Use $LGENDER for the full name, eg. "female".
+
+$UPTIME		   The time Rodney has been running, eg. "0 Days, 00:01:54"
+$SERVERUPTIME	   The time the server's been running.
+$COIN		   Either "heads" or "tails"
+$PLAYER		   One of the people currently playing on NAO.
+$NPLAYERS	   Number of players of NAO.
+$POM		   Phase of the Moon.
+$DATE		   Date and time of the server.
+
+
+Commands with parameters:
+
+$LC(...)           Lowercase parameter.
+$UC(...)           Uppercase parameter.
+$LCFIRST(...)      Lowercase parameter's first character.
+$UCFIRST(...)      Uppercase parameter's first character.
+$STRLEN(...)	   Return length of parameter, in characters.
+$TRIM(...)	   Remove whitespace from beginning and end of parameter.
+$AN(...)           Prefix parameter string with "an " or "a ".
+$PLURAL(...)	   Return a plural form of parameter.
+$NPLURAL(...)	   Takes 2 parameters, separated by a pipe. if param1 equals 1, returns $AN(param2) else returns $PLURAL(param2)
+$RND(X)            Returns a random number between 0 and X, inclusive.
+$RND(N,M)	   Returns a random number between N and M, inclusive.
+$RND(NdM)	   Returns a random die roll with dice NdM.
+$SHUFFLE(...)	   Accepts a pipe-delimited list of strings, and returns all of them in random order, eg. "$SHUFFLE(foo|bar|baz)".
+$CHOICE(...)	   Accepts a pipe-delimited list of strings, and returns one of them.
+		   Each string can be prepended with "N*" to multiply the weight for that string, eg. "$CHOICE(10*foo|bar)".
+$URLENC(...)	   Encode the parameter for URL usage.
+$ROT13(...)	   Encode the parameter with rot13.
+$IF(...)	   Takes 4 parameters, separated by a pipe. if param1 equals param2, shows param3, else shows param4.
+$RNDCHAR(...)	   like $CHAR, but can be given a role as a parameter, eg. "$RNDCHAR(Wiz)"
+$REPLACESTR(...)   Takes 3 parameters, separated by a pipe. Replaces all occurrences of param1 in param3 with param2.
+$TIMEFMT(...)	   Use strftime(3) to display the current time.
+$LG(...)	   Perform !lg query (minus !lg and -dump), for example "$LG(scorchgeek won)"
+$RMPIPES(...)	   Replaces the pipe characters with spaces.
+$ESCAPE(...)       Escapes pipe characters so they don't interfere with other commands.
+$UNESCAPE(...)     Replaces escaped pipe characters with pipes.
+$CALC(...)         Evaluate parameter. Only accepts simple integer values and +, -, * and /, for example "$CALC(1+(2*3)/4)"
+
+Special commands:
+
+$THEN		   The bot will split the result at this and speak each part separately. (Note that there's a space: "$THEN ")
+$ACT     	   If the definition begins with this, followed by a space, Rodney will ctcp action the message instead of messaging.
+
