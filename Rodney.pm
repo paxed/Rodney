@@ -108,7 +108,6 @@ my $dbh;
 
 my @wiki_datagram_queue = ();
 
-my $trigger_counts = 0;
 
 use constant DATAGRAM_MAXLEN => 1024;
 
@@ -212,8 +211,7 @@ sub run {
 		buglist_update	=> "buglist_update",
 		get_wiki_datagram => "on_wiki_datagram",
 		handle_wiki_data => "handle_wiki_datagrams",
-		handle_querythread_out => "handle_querythread_output",
-		handle_trigger_flood => "handle_trigger_flood_countdown"
+		handle_querythread_out => "handle_querythread_output"
             }
         ]
     );
@@ -299,7 +297,6 @@ sub bot_start {
     $kernel->select_read( $socket, "get_wiki_datagram" );
     $kernel->delay('handle_wiki_data' => 20);
     $kernel->delay('handle_querythread_out' => 10);
-    $kernel->delay('handle_trigger_flood' => 10);
 }
 
 ############################# RODNEY STUFF
@@ -2698,6 +2695,21 @@ sub paramstr_if {
 }
 
 
+sub is_learndb_trigger {
+    my $str = lc(shift);
+    return 1 if ($str =~ m/^#[a-z]+:/);
+    return 0;
+}
+
+sub can_edit_learndb {
+    my $nick = shift;
+    my $term = shift;
+    if (is_learndb_trigger($term)) {
+	return 1 if (nick_is_identified($nick));
+	return 0;
+    }
+    return 1;
+}
 
 # parses "$FOO(blah)" variables
 sub parse_strvariables_param {
@@ -2878,6 +2890,11 @@ sub pub_msg {
 	my $tnum = $2 || 0;
 	my ($edita, $editb, $opts);
 
+	if (!can_edit_learndb($nick, $term)) {
+	    $self->botspeak($kernel, "You can't do that.", $nick);
+	    return;
+	}
+
 	if (($edita, $editb, $opts) = grok_learn_edit_regex($3)) {
 	    do_pubcmd_dbedit($self,$kernel,$channel,$term,$tnum,$edita,$editb,$opts);
 	} elsif ($@) {
@@ -2890,21 +2907,31 @@ sub pub_msg {
 # !learn del foo[N]
 	my $term = $1;
 	my $num = $2;
+	if (!can_edit_learndb($nick, $term)) {
+	    $self->botspeak($kernel, "You can't do that.", $nick);
+	    return;
+	}
 	do_pubcmd_dbdelete($self, $kernel, $channel, $term, $num);
     }
     elsif ($msg =~ m/^!learn\s+swap\s+(\S+)\s+(\S+)$/i) {
 # !learn swap foo[N] bar[M]
 	my $terma = $1;
 	my $termb = $2;
+	if (!can_edit_learndb($nick, $terma) || !can_edit_learndb($nick, $termb)) {
+	    $self->botspeak($kernel, "You can't do that.", $nick);
+	    return;
+	}
 	do_pubcmd_dbswap($self, $kernel, $channel, $terma, $termb);
     }
     elsif ($msg =~ m/^!learn\s+add\s+(\S+)\s+(.+)$/i) {
 # !learn add foo bar
 	my $term = $1;
 	my $def = $2;
-#	if (!($term =~ m/^#nethack:/)) {
-	    do_pubcmd_dbadd($self, $kernel, $channel, $nick, $term, $def);
-#	}
+	if (!can_edit_learndb($nick, $term)) {
+	    $self->botspeak($kernel, "You can't do that.", $nick);
+	    return;
+	}
+	do_pubcmd_dbadd($self, $kernel, $channel, $nick, $term, $def);
     } elsif ((priv_and_pub_msg($self, $kernel, $channel, $nick, $msg) == 1) &&
 	     ($msg =~ m/^\s*(\S.+)$/i)) {
 	my $cmdargs = $1 || "";
@@ -2919,13 +2946,6 @@ sub pub_msg {
 	}
 
 	if (@a > 0) {
-
-	    if ($trigger_counts > 0) {
-		$self->botspeak($kernel, "Too many triggers used, ignoring ".$msg, $nick, 1);
-		return;
-	    }
-
-	    $trigger_counts = $trigger_counts + 5;
 
 	    my $b = $a[rand(@a)];
 	    $b =~ s/^\S+\[\d+\]: //;
@@ -2946,11 +2966,6 @@ sub pub_msg {
 }
 
 
-sub handle_trigger_flood_countdown {
-    my ( $self, $kernel ) = @_[ OBJECT, KERNEL ];
-    $trigger_counts-- if ($trigger_counts > 0);
-    $kernel->delay('handle_trigger_flood' => 10);
-}
 
 # Handle public events
 sub on_public {
@@ -2977,8 +2992,6 @@ sub on_public {
 	$self->bot_priv_msg($kernel, "[ignored] <$nick> $msg");
 	return;
     }
-
-    $trigger_counts-- if ($trigger_counts > 0);
 
     pub_msg($self, $kernel, $channel, $nick, $msg);
 }
@@ -3224,16 +3237,12 @@ sub on_msg {
 		$self->botspeak($kernel, "Showing privmsgs to you.", $nick);
 	    }
 	}
-	elsif ($msg =~ m/^!triggerflood(\s.+)?$/i) {
-	    $trigger_counts = scalar(paramstr_trim($1)) if ($1);
-	    $self->botspeak($kernel, "Trigger flood protection count: $trigger_counts", $nick);
-	}
 	elsif ($msg =~ m/^!die(\s.+)?$/i) {
 	    $self->botspeak($kernel, paramstr_trim($1)) if ($1);
 	    kill_bot();
 	}
 	elsif ($msg =~ m/^!help$/i) {
-	    $self->botspeak($kernel, "Commands: !die [msg], !showmsg, !msg a b, !me chan msg, !privme nick msg, !nick a, !say chan msg, !id, !deid, !throttle [a b], !ignore nick msgregexp, !rmignore n, !bones, !togglelogfile, !togglebuglist, !wiki, !join chan, !leave chan, !parsestr str, !parseargs str, !triggerflood [n]", $nick);
+	    $self->botspeak($kernel, "Commands: !die [msg], !showmsg, !msg a b, !me chan msg, !privme nick msg, !nick a, !say chan msg, !id, !deid, !throttle [a b], !ignore nick msgregexp, !rmignore n, !bones, !togglelogfile, !togglebuglist, !wiki, !join chan, !leave chan, !parsestr str, !parseargs str", $nick);
 	} else {
 	    pub_msg($self, $kernel, $nick, $nick, $msg);
 	}
