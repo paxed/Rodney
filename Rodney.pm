@@ -2736,7 +2736,9 @@ sub parse_strvariables_param {
 	'$TIMEFMT'    => \&paramstr_timefmt,
 	'$LG'         => \&paramstr_sqlquery_xlogfile,
 	'$RMPIPES'    => \&paramstr_rmpipes,
-	'$CALC'       => \&paramstr_math
+	'$CALC'       => \&paramstr_math,
+	'$ESCAPE'     => \&paramstr_escape,
+	'$UNESCAPE'   => \&paramstr_unescape
 	);
 
     foreach my $tmp (keys %paramrepls) {
@@ -2757,7 +2759,7 @@ sub parse_strvariables {
 
     $cmdargs = "" if (!defined $cmdargs);
 
-    my @arglist = split(/ /, $cmdargs);
+    my @arglist = split(/ /, paramstr_escape($cmdargs));
     shift @arglist;
 
     my $argr = $arglist[rand(@arglist)] || $nick;
@@ -2820,7 +2822,7 @@ sub parse_strvariables {
 
     $b = parse_strvariables_param($b);
 
-    return $b;
+    return paramstr_unescape($b);
 }
 
 # decode_xlog_datastr("conduct", "0x102")

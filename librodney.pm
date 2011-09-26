@@ -126,6 +126,20 @@ sub paramstr_rmpipes {
     return $s;
 }
 
+# paramstr_unescape("a|b|c") -> "a\x01b\x01c"
+sub paramstr_escape {
+    my $s = shift || "";
+    $s =~ s/\|/\x01/g;
+    return $s;
+}
+
+# paramstr_unescape("a\x01b\x01c") -> "a|b|c", usually used for $ARGS
+sub paramstr_unescape {
+    my $s = shift || "";
+    $s =~ s/\x01/|/g;
+    return $s;
+}
+
 # paramstr_replacestr("a|b|abc") -> "bbc"
 sub paramstr_replacestr {
     my $str = shift || "";
