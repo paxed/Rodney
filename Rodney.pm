@@ -108,19 +108,15 @@ my $dbh;
 
 my @wiki_datagram_queue = ();
 
+my $xlogfiledb;
+my $shorturldb;
 
 use constant DATAGRAM_MAXLEN => 1024;
 
 
 sub db_connect {
     my ($self) = @_;
-
-    my $dbfile = "/opt/nethack/nethack.alt.org/nh343/var/xlogfile.db";
-    if (defined $self && $self->{'nh_logfile_db'}) {
-	$dbfile = $self->{'nh_logfile_db'}
-    } 
-
-    $dbh = DBI->connect("dbi:SQLite:dbname=".$dbfile,"","",{AutoCommit => 1, PrintError => 1});
+    $dbh = DBI->connect("dbi:".$xlogfiledb->{dbtype}.":".$xlogfiledb->{db}.":localhost",$xlogfiledb->{user},$xlogfiledb->{pass},{AutoCommit => 1, PrintError => 1});
 }
 
 sub db_disconnect {
@@ -164,6 +160,9 @@ sub run {
 
     $nh_dumppath = $self->{'nh_dumppath'};
     $nh_dumpurl  = $self->{'nh_dumpurl'};
+
+    $xlogfiledb = $self->{'xlogfiledb'};
+    $shorturldb = $self->{'shorturldb'};
 
     print "Running the bot.\n";
 
@@ -305,7 +304,7 @@ sub shorten_url {
     my $url = shift;
     return '' if (!(defined $url));
 
-    my $dbh = DBI->connect("dbi:mysql:shorturlnaodb","wikihack","k4ttik4tti");
+    $dbh = DBI->connect("dbi:".$shorturldb->{dbtype}.":".$shorturldb->{db}.":localhost",$shorturldb->{user},$shorturldb->{pass},{AutoCommit => 1, PrintError => 1});
     if ($dbh) {
 	my $sth = $dbh->prepare("INSERT INTO shorturl (url) VALUES (".$dbh->quote($url).")");
 	if ($dbh->err()) { return $url; }

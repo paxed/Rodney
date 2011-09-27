@@ -62,6 +62,19 @@ my $botdatapath = '/opt/nethack/rodney';
 
 			 nh_logfile_db => $chrootpath.'/nh343/var/xlogfile.db',
 
+			 xlogfiledb => {
+			     dbtype => 'mysql',
+			     db => 'xlogfiledb',
+			     user => 'CHANGEME',
+			     pass => 'CHANGEME'
+			 },
+			 shorturldb => {
+			     dbtype => 'mysql',
+			     db => 'shorturlnaodb',
+			     user => 'CHANGEME',
+			     pass => 'CHANGEME'
+			 },
+
 			 nh_livelogfile => $chrootpath.'/nh343/var/livelog',
 			 NHRecordFile => $chrootpath.'/nh343/var/record',
 			 nh_dumppath => $chrootpath.'/dgldir/userdata/%U/%u/dumplog/%t.nh343.txt',
