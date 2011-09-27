@@ -2793,6 +2793,7 @@ sub parse_strvariables_param {
 	'$UC'         => \&paramstr_uc,
 	'$UCFIRST'    => \&paramstr_ucfirst,
 	'$STRLEN'     => \&paramstr_strlen,
+	'$SUBSTR'     => \&paramstr_substr,
 	'$IF'         => \&paramstr_if,
 	'$TRIM'       => \&paramstr_trim,
 	'$RNDCHAR'    => \&random_nh_char,

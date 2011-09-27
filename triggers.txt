@@ -54,6 +54,7 @@ $UC(...)           Uppercase parameter.
 $LCFIRST(...)      Lowercase parameter's first character.
 $UCFIRST(...)      Uppercase parameter's first character.
 $STRLEN(...)	   Return length of parameter, in characters.
+$SUBSTR(...)	   Takes 2 or 3 parameters. Returns part of the first parameter, similar to perl's substr()
 $TRIM(...)	   Remove whitespace from beginning and end of parameter.
 $AN(...)           Prefix parameter string with "an " or "a ".
 $PLURAL(...)	   Return a plural form of parameter.

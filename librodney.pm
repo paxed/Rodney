@@ -178,6 +178,23 @@ sub paramstr_replacestr {
     return $str;
 }
 
+# paramstr_substr("foo|0|1") => "f"
+# paramstr_substr("foo|1") => "oo"
+sub paramstr_substr {
+    my $s = shift || "";
+    if ($s =~ m/^(.*)\|(.*)\|(.*)$/) {
+	my $str = $1;
+	my $offset = $2 || 0;
+	my $len = $3 || 0;
+	return substr($str, $offset, $len);
+    } elsif ($s =~ m/^(.*)\|(.*)$/) {
+	my $str = $1;
+	my $offset = $2 || 0;
+	return substr($str, $offset);
+    }
+    return "";
+}
+
 sub paramstr_lc { return lc(shift || ""); }
 sub paramstr_uc { return uc(shift || ""); }
 sub paramstr_lcfirst { return lcfirst(shift || ""); }
