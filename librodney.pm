@@ -615,12 +615,12 @@ sub demunge_recordline {
 sub fixstring {
     my ($str, %dat) = @_;
     my $firstchar = substr($dat{'name'}, 0, 1);
-    my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime($dat{'starttime'});
+    my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime($dat{'starttime'} || time());
     my $ttyrecfile = sprintf("%04d-%02d-%02d.%02d:%02d:%02d", ($year+1900), ($mon+1), $mday, $hour,$min,$sec);
-    $str =~ s/%u/$dat{'name'}/g;
-    $str =~ s/%U/$firstchar/g;
-    $str =~ s/%t/$dat{'starttime'}/g;
-    $str =~ s/%T/$ttyrecfile/g;
+    $str =~ s/%u/$dat{'name'}/g if ($dat{'name'});
+    $str =~ s/%U/$firstchar/g if ($firstchar);
+    $str =~ s/%t/$dat{'starttime'}/g if ($dat{'starttime'});
+    $str =~ s/%T/$ttyrecfile/g if ($ttyrecfile);
     return $str;
 }
 
