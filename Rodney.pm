@@ -92,12 +92,13 @@ my %nh_short_dnums = (
 # stuff ignored by the bot. "hostmask regex" -form.
 my @ignorance;
 
-my @nh_monsters = read_textdata_file("/opt/nethack/rodney/data/nh343monsters.txt");
-my @nh_objects = read_textdata_file("/opt/nethack/rodney/data/nh343objects.txt");
+my @nh_monsters;
+my @nh_objects;
 
 my $nh_dumppath;
 my $nh_dumpurl;
-
+my $userdata_ttyrec;
+my $userdata_ttyrec_puburl;
 
 my $learn_db = LearnDB->new();
 my $seen_db = SeenDB->new();
@@ -161,8 +162,14 @@ sub run {
     $nh_dumppath = $self->{'nh_dumppath'};
     $nh_dumpurl  = $self->{'nh_dumpurl'};
 
+    $userdata_ttyrec = $self->{'userdata_ttyrec'};
+    $userdata_ttyrec_puburl = $self->{'userdata_ttyrec_puburl'};
+
     $xlogfiledb = $self->{'xlogfiledb'};
     $shorturldb = $self->{'shorturldb'};
+
+    @nh_monsters = read_textdata_file($self->{'nh_monsters_file'});
+    @nh_objects = read_textdata_file($self->{'nh_objects_file'});
 
     print "Running the bot.\n";
 
@@ -1328,10 +1335,10 @@ sub userdata_name {
 
     $name =~ tr[a-zA-Z0-9][]cd;
 
-    my $directory = "/opt/nethack/nethack.alt.org/dgldir/userdata/".lc(substr($name,0,1))."/";
+    my $directory = $self->{'userdata_name'}.lc(substr($name,0,1))."/";
     my ($xname) = find_files($directory, qr/^\Q$name\E$/i);
     if (!$xname) {
-	$directory = "/opt/nethack/nethack.alt.org/dgldir/userdata/".uc(substr($name,0,1))."/";
+	$directory = $self->{'userdata_name'}.uc(substr($name,0,1))."/";
 	return undef unless ($xname) = find_files($directory, qr/^\Q$name\E$/i);
     }
     return $xname;
@@ -1342,14 +1349,14 @@ sub dumplog_url {
     my $name = $self->userdata_name(shift)
         or return;
 
-    my $directory = "/opt/nethack/nethack.alt.org/dgldir/userdata/";
+    my $directory = $self->{'userdata_name'};
     my $userdir = "$directory/".substr($name, 0,1)."/$name/dumplog/";
 
     opendir DIR, $userdir;
     my @files = sort grep {/^\d+\.nh343\.txt$/} readdir DIR;
 
     if (@files) {
-        return "http://alt.org/nethack/userdata/$name/dumplog/$files[-1]";
+        return fixstring($self->{'userdata_dumpname_puburl'}, {name=>$name})."$files[-1]";
     }
 
     return undef;
@@ -1861,17 +1868,17 @@ sub do_sqlquery_xlogfile {
 			}
 		    }
 		} elsif ($show_ttyrec) {
-		    my $ttyrecfile = fixstring("/opt/nethack/nethack.alt.org/dgldir/userdata/%U/%u/ttyrec/%T.ttyrec", %$dbdata);
+		    my $ttyrecfile = fixstring($userdata_ttyrec, %$dbdata);
 		    if (-e "$ttyrecfile") {
 			next if ($count_dumps >= 1);
-			my $url = fixstring("http://alt.org/nethack/userdata/%u/ttyrec/%T.ttyrec", %$dbdata);
+			my $url = fixstring($userdata_ttyrec_puburl, %$dbdata);
 			push(@ret, $url);
 			$count_dumps++;
 		    } else {
 			my $ttyrecfilebz2 = $ttyrecfile.".bz2";
 			if (-e "$ttyrecfilebz2") {
 			    next if ($count_dumps >= 1);
-			    my $url = fixstring("http://alt.org/nethack/userdata/%u/ttyrec/%T.ttyrec.bz2", %$dbdata);
+			    my $url = fixstring($userdata_ttyrec_puburl.".bz2", %$dbdata);
 			    push(@ret, $url);
 			    $count_dumps++;
 			} else {
@@ -2001,7 +2008,7 @@ sub do_pubcmd_dbquery {
     # 7/1/2005 11:08AM: (Stevie-O) Prevent ?> flooding
     if (!$term_no && @a > $self->{'SpeakLimit'} && $sendto =~ /^#/) {
         # send this instead
-	@a = ("That entry is a little too long. See http://alt.org/nethack/Rodney/rodney-learn.php?s=".uri_escape($term));
+	@a = ("That entry is a little too long. See ".$self->{'learn_url'}.uri_escape($term));
     }
 
     if (lc $sendto ne lc $errsto) {
@@ -2055,7 +2062,7 @@ sub do_pubcmd_dbsearch {
     }
 
     if (@searchresult > $self->{'SpeakLimit'} && $sendto =~ /^#/) {
-	@searchresult = ("Search result is a little too long. See http://alt.org/nethack/Rodney/rodney-learn.php?s=".uri_escape($term));
+	@searchresult = ("Search result is a little too long. See ".$self->{'learn_url'}.uri_escape($term));
     }
 
     foreach $a (@searchresult) {
@@ -2342,7 +2349,7 @@ sub do_pubcmd_savefiles {
     my ($self, $kernel, $channel, $name) = @_;
     my $username = $name;
     my $findname = '^5'.$username.'\.gz$';
-    my $savedir = '/opt/nethack/nethack.alt.org/nh343/var/save/';
+    my $savedir = $self->{'nh_savefiledir'};
     my @files = find_files($savedir, $findname);
 
     if ($#files < 0) {
@@ -2362,7 +2369,7 @@ sub do_pubcmd_rcfile {
         return;
     };
 
-    my $rc = "http://alt.org/nethack/userdata/$name/$name.nh343rc";
+    my $rc = fixstring($self->{'userdata_rcfile_puburl'}, {name=>$name});
     $self->botspeak($kernel, $rc, $channel);
 }
 
@@ -3218,7 +3225,8 @@ sub on_msg {
 	    $self->botspeak($kernel, "Throttle,  priv: $privmsg_throttle, pub: $pubmsg_throttle", $nick);
 	}
 	elsif ($msg =~ m/^!bones$/i) {
-	    my $bonefiledir = '/opt/nethack/nethack.alt.org/nh343/var';
+	    my $bonefiledir = $self->{'NHLvlFiles'};
+	    $bonefiledir =~ s/\/$//;
 	    my @bonefiles = `ls -al $bonefiledir/bon* | nl`;
 	    my $a;
 	    if (@bonefiles > 0) {

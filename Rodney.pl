@@ -75,6 +75,16 @@ my $botdatapath = '/opt/nethack/rodney';
 			     pass => 'CHANGEME'
 			 },
 
+			 nh_monsters_file => $botdatapath.'/data/nh343monsters.txt',
+			 nh_objects_file => $botdatapath.'/data/nh343objects.txt',
+			 learn_url => $pub_url.'/Rodney/rodney-learn.php?s=',
+			 userdata_name => $chrootpath.'/dgldir/userdata/',
+			 userdata_dumpname_puburl => $pub_url.'/userdata/%u/dumplog/',
+			 userdata_ttyrec => $chrootpath.'/dgldir/userdata/%U/%u/ttyrec/%T.ttyrec',
+			 userdata_ttyrec_puburl => $pub_url.'/userdata/%u/ttyrec/%T.ttyrec',
+			 nh_savefiledir => $chrootpath.'/nh343/var/save/',
+			 userdata_rcfile_puburl => $pub_url.'/userdata/%u/%u.nh343rc',
+
 			 nh_livelogfile => $chrootpath.'/nh343/var/livelog',
 			 NHRecordFile => $chrootpath.'/nh343/var/record',
 			 nh_dumppath => $chrootpath.'/dgldir/userdata/%U/%u/dumplog/%t.nh343.txt',
