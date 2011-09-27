@@ -1356,7 +1356,8 @@ sub dumplog_url {
     my @files = sort grep {/^\d+\.nh343\.txt$/} readdir DIR;
 
     if (@files) {
-        return fixstring($self->{'userdata_dumpname_puburl'}, {name=>$name})."$files[-1]";
+	my %namehash = (name=>$name);
+        return fixstring($self->{'userdata_dumpname_puburl'}, %namehash)."$files[-1]";
     }
 
     return undef;
@@ -2369,7 +2370,8 @@ sub do_pubcmd_rcfile {
         return;
     };
 
-    my $rc = fixstring($self->{'userdata_rcfile_puburl'}, {name=>$name});
+    my %namehash = (name=>$name);
+    my $rc = fixstring($self->{'userdata_rcfile_puburl'}, %namehash);
     $self->botspeak($kernel, $rc, $channel);
 }
 
