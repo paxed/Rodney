@@ -111,6 +111,7 @@ my @wiki_datagram_queue = ();
 
 my $xlogfiledb;
 my $shorturldb;
+my $dgldb;
 
 use constant DATAGRAM_MAXLEN => 1024;
 
@@ -167,6 +168,7 @@ sub run {
 
     $xlogfiledb = $self->{'xlogfiledb'};
     $shorturldb = $self->{'shorturldb'};
+    $dgldb = $self->{'dgldb'};
 
     @nh_monsters = read_textdata_file($self->{'nh_monsters_file'});
     @nh_objects = read_textdata_file($self->{'nh_objects_file'});
@@ -914,9 +916,46 @@ sub mangle_sql_query {
 }
 
 
+sub is_valid_playername {
+    my $s = shift;
+    return 1 if ($s =~ m/^[0-9a-zA-Z]+$/);
+    return 0;
+}
 
+sub paramstr_is_used_playername {
+    my $plrname = shift || "";
+    my $name = "";
+    return 0 if (!is_valid_playername($plrname));
 
+    my $dbh = DBI->connect("dbi:".$dgldb->{'dbtype'}.":dbname=".$dgldb->{'db'},"","",{AutoCommit => 1, PrintError => 1});
+    return 0 if (!$dbh);
 
+    my $sth = $dbh->prepare("SELECT username FROM dglusers WHERE username like ".$dbh->quote($plrname));
+    if ($dbh->err()) { print "$DBI::errstr\n"; return 0; }
+    $sth->execute();
+
+    my $rowcnt = $sth->fetchrow_hashref();
+    return 0 if (!$rowcnt->{'username'});
+
+    return 1;
+}
+
+sub paramstr_playername {
+    my $plrname = shift || "";
+    my $name = "";
+    return "" if (!is_valid_playername($plrname));
+
+    my $dbh = DBI->connect("dbi:".$dgldb->{'dbtype'}.":dbname=".$dgldb->{'db'},"","",{AutoCommit => 1, PrintError => 1});
+    return "" if (!$dbh);
+
+    my $sth = $dbh->prepare("SELECT username FROM dglusers WHERE username like ".$dbh->quote($plrname));
+    if ($dbh->err()) { print "$DBI::errstr\n"; return ""; }
+    $sth->execute();
+
+    my $rowcnt = $sth->fetchrow_hashref();
+    return $rowcnt->{'username'} if ($rowcnt->{'username'});
+    return "";
+}
 
 sub buglist_update {
     my ( $self, $kernel ) = @_[ OBJECT, KERNEL ];
@@ -2708,10 +2747,10 @@ sub paramstr_if {
 	    return parse_strvariables_param($do_ne);
 	}
     } elsif ($str =~ m/^(.*)\|(.*)\|(.*)$/) {
-	my $bool = int $1;
+	my $bool = $1;
 	my $do_eq = $2 || "";
 	my $do_ne = $3 || "";
-	if ($bool) {
+	if (paramstr_isint($bool) && (int $bool)) {
 	    return parse_strvariables_param($do_eq);
 	} else {
 	    return parse_strvariables_param($do_ne);
@@ -2768,7 +2807,9 @@ sub parse_strvariables_param {
 	'$ISNUM'      => \&paramstr_isnum,
 	'$ISINT'      => \&paramstr_isint,
 	'$ISALPHA'    => \&paramstr_isalpha,
-	'$ISALNUM'    => \&paramstr_isalphanum
+	'$ISALNUM'    => \&paramstr_isalphanum,
+	'$ISPLR'      => \&paramstr_is_used_playername,
+	'$PLRNAME'    => \&paramstr_playername
 	);
 
     foreach my $tmp (keys %paramrepls) {

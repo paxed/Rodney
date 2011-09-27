@@ -74,6 +74,10 @@ my $botdatapath = '/opt/nethack/rodney';
 			     user => 'CHANGEME',
 			     pass => 'CHANGEME'
 			 },
+			 dgldb => {
+			     dbtype => 'SQLite',
+			     db => $chrootpath.'/dgldir/dgamelaunch.db'
+			 },
 
 			 nh_monsters_file => $botdatapath.'/data/nh343monsters.txt',
 			 nh_objects_file => $botdatapath.'/data/nh343objects.txt',
