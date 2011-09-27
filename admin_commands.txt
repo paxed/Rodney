@@ -1,0 +1,27 @@
+
+To identify as admin to Rodney, do "/msg Rodney !id <apass>", where apass is
+the one defined in Rodney.pl
+
+!id <password>             Identify to Rodney as an admin
+!deid		           De-identify
+!say <channel> <message>   Make Rodney say message in channel
+!wiki	       		   NetHackwiki recentchanges queue
+!ignore <nick> <regexp>	   Ignore a line matching <regexp> from <nick>
+!ignore	       		   Display what Rodney is ignoring
+!rmignore <number>	   Remove ignored line
+!togglebuglist		   Toggle nethack.org buglist checking on or off
+!togglelogfile		   Toggle logfile checking on or off
+!nick <name>		   Change Rodney's nick to <name>
+!join <channel>		   Make Rodney join <channel>
+!leave <channel>	   Make Rodney leave <channel>
+!part <channel>		   Alias for !leave
+!me <channel> <message>	   Make Rodney act out <message> in <channel> (CTCP ACTION)
+!privme <nick> <message>   Make Rodney act out <message> to user <nick> (CTCP ACTION)
+!throttle      		   Display Rodney's messaging throttling values
+!throttle <a> <b>	   Set privmsg throttle to <a> and pubmsg throttle to <b>
+!bones			   Display bone files on the server
+!parsestr <string>	   Parse <string> as if it was a trigger
+!parseargs <string>	   Set $ARGS for !parsestr
+!showmsg   		   Make Rodney show private messages to you
+!die x			   Kill Rodney
+!help			   Display URL for this help
