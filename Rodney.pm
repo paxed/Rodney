@@ -2840,11 +2840,13 @@ sub parse_strvariables {
 }
 
 sub handle_learndb_trigger {
-    my ( $self, $kernel, $channel, $nick, $cmdargs) = @_;
+    my ( $self, $kernel, $channel, $nick, $cmdargs, $output) = @_;
 
     my @arglist = split(/ /, $cmdargs);
     my $term = $channel.":".$arglist[0];
     my @a;
+
+    $output = $output || $channel;
     $term =~ s/ /_/g;
     @a = $learn_db->query($term);
     if (@a == 0) {
@@ -2862,10 +2864,10 @@ sub handle_learndb_trigger {
 	    my $do_me = ($l =~ m/^\$ACT\s/) ? 1 : 0;
 	    $l =~ s/^\$ACT\s//;
 	    if ($do_me) {
-		$kernel->post(NICK, 'sl', "PRIVMSG $channel :\001ACTION $l\001");
-		log_channel_msg($self, $channel, NICK, "*" . NICK . " ".$l);
+		$kernel->post(NICK, 'sl', "PRIVMSG $output :\001ACTION $l\001");
+		log_channel_msg($self, $output, NICK, "*" . NICK . " ".$l) if ($output eq $channel);
 	    } else {
-		$self->botspeak($kernel, $l, $channel);
+		$self->botspeak($kernel, $l, $output);
 	    }
 	}
     }
@@ -3245,6 +3247,11 @@ sub on_msg {
 	elsif ($msg =~ m/^!parseargs(.*)?$/) {
 	    $parsestr_cmd_args = paramstr_trim($1) if ($1);
 	    $self->botspeak($kernel, "command arguments for !parsestr: \"".$parsestr_cmd_args."\"", $nick);
+	}
+	elsif ($msg =~ m/^!trigger\s+(\S+)\s+(\S.*)$/) {
+	    my $chn = $1;
+	    my $args = $2;
+	    $self->handle_learndb_trigger($kernel, $chn, $nick, $args, $nick);
 	}
 	elsif ($msg =~ m/^!showmsg$/i) {
 	    if ((defined $send_msg_id) && ($send_msg_id eq $nick)) {
