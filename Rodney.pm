@@ -1662,6 +1662,14 @@ sub botspeak {
     }
 }
 
+sub botaction {
+    my ($self, $kernel, $msg, $channel) = @_;
+    $kernel->post(NICK, 'sl', "PRIVMSG $channel :\001ACTION $msg\001");
+    if (defined $channel && ($channel =~ m/^#/)) {
+	log_channel_msg($self, $channel, NICK, "*".NICK." ".$msg);
+    }
+}
+
 # Borrowed this code from another bot
 # Can't for the life of me remember which one
 # Please, let me know if it was you, so I can
@@ -2863,8 +2871,7 @@ sub handle_learndb_trigger {
 	    my $do_me = ($l =~ m/^\$ACT\s/) ? 1 : 0;
 	    $l =~ s/^\$ACT\s//;
 	    if ($do_me) {
-		$kernel->post(NICK, 'sl', "PRIVMSG $output :\001ACTION $l\001");
-		log_channel_msg($self, $output, NICK, "*" . NICK . " ".$l) if ($output eq $channel);
+		$self->botaction($kernel, $l, $output);
 	    } else {
 		$self->botspeak($kernel, $l, $output);
 	    }
@@ -3197,7 +3204,7 @@ sub on_msg {
 	    my $chn = $1;
 	    my $message = $2;
 	    if (defined $chn && ($chn =~ m/^#/) && ( grep {$_ eq $chn } @{$self->{'joined_channels'}} )) {
-		    $kernel->post(NICK, 'sl', "PRIVMSG $chn :\001ACTION $message\001");
+		$self->botaction($kernel, $message, $chn);
 	    } else {
 		$self->botspeak($kernel, "Sorry, $chn is not a channel i'm on.", $nick);
 	    }
@@ -3205,7 +3212,7 @@ sub on_msg {
 	elsif ($msg =~ m/^!privme\s(.+)\s(.+)/i) {
 	    my $target = $1;
 	    my $message = $2;
-	    $kernel->post(NICK, 'sl', "PRIVMSG $target :\001ACTION $message\001");
+	    $self->botaction($kernel, $message, $target);
 	}
 	elsif ($msg =~ m/^!throttle$/i) {
 	    $self->botspeak($kernel, "Throttle,  priv: $privmsg_throttle, pub: $pubmsg_throttle", $nick);
