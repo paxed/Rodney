@@ -51,6 +51,8 @@ my $botdatapath = '/opt/nethack/rodney';
 			 twitteruserpass_asc => '**CHANGE ME**', # username:password
 			 use_twitter => 0,
 
+			 admin_help_url => $pub_url.'/Rodney/admin_commands.txt',
+
 			 dglInprogPath => $chrootpath.'/dgldir/inprogress-nh343',
 			 PublicDumpPath => $pub_url.'/dumplog',
 			 NHDumpPath => $chrootpath.'/dgldir/dumplog',

@@ -2707,7 +2707,7 @@ sub paramstr_if {
 
 sub is_learndb_trigger {
     my $str = lc(shift);
-    return 1 if ($str =~ m/^#[a-z]+:/);
+    return 1 if ($str =~ m/^#([a-z]+|\*):/);
     return 0;
 }
 
@@ -2839,6 +2839,38 @@ sub parse_strvariables {
     return paramstr_unescape($b);
 }
 
+sub handle_learndb_trigger {
+    my ( $self, $kernel, $channel, $nick, $cmdargs) = @_;
+
+    my @arglist = split(/ /, $cmdargs);
+    my $term = $channel.":".$arglist[0];
+    my @a;
+    $term =~ s/ /_/g;
+    @a = $learn_db->query($term);
+    if (@a == 0) {
+	$term = "#*:".$arglist[0];
+	@a = $learn_db->query($term);
+    }
+
+    if (@a > 0) {
+
+	my $b = $a[rand(@a)];
+	$b =~ s/^\S+\[\d+\]: //;
+	$b = $self->parse_strvariables($channel, $nick, $cmdargs, $b);
+
+	foreach my $l (split(/\$THEN /, $b)) {
+	    my $do_me = ($l =~ m/^\$ACT\s/) ? 1 : 0;
+	    $l =~ s/^\$ACT\s//;
+	    if ($do_me) {
+		$kernel->post(NICK, 'sl', "PRIVMSG $channel :\001ACTION $l\001");
+		log_channel_msg($self, $channel, NICK, "*" . NICK . " ".$l);
+	    } else {
+		$self->botspeak($kernel, $l, $channel);
+	    }
+	}
+    }
+}
+
 # decode_xlog_datastr("conduct", "0x102")
 sub decode_xlog_datastr {
     my ($a, $b) = @_;
@@ -2950,34 +2982,7 @@ sub pub_msg {
 	do_pubcmd_dbadd($self, $kernel, $channel, $nick, $term, $def);
     } elsif ((priv_and_pub_msg($self, $kernel, $channel, $nick, $msg) == 1) &&
 	     ($msg =~ m/^\s*(\S.+)$/i)) {
-	my $cmdargs = $1 || "";
-	my @arglist = split(/ /, $1);
-	my $term = $channel.":".$arglist[0];
-	my @a;
-	$term =~ s/ /_/g;
-	@a = $learn_db->query($term);
-	if (@a == 0) {
-	    $term = "#*:".$arglist[0];
-	    @a = $learn_db->query($term);
-	}
-
-	if (@a > 0) {
-
-	    my $b = $a[rand(@a)];
-	    $b =~ s/^\S+\[\d+\]: //;
-	    $b = $self->parse_strvariables($channel, $nick, $cmdargs, $b);
-
-	    foreach my $l (split(/\$THEN /, $b)) {
-		my $do_me = ($l =~ m/^\$ACT\s/) ? 1 : 0;
-		$l =~ s/^\$ACT\s//;
-		if ($do_me) {
-		    $kernel->post(NICK, 'sl', "PRIVMSG $channel :\001ACTION $l\001");
-		    log_channel_msg($self, $channel, NICK, "*" . NICK . " ".$l);
-		} else {
-		    $self->botspeak($kernel, $l, $channel);
-		}
-	    }
-	}
+	$self->handle_learndb_trigger($kernel, $channel, $nick, $1);
     }
 }
 
@@ -3108,12 +3113,13 @@ sub on_msg {
 	}
 	elsif ($msg =~ m/^!wiki/) {
 	    my $ngrams = scalar (@wiki_datagram_queue);
-	    $self->botspeak($kernel, "Wiki recentchanges queue: $ngrams", $nick);   
+	    $self->botspeak($kernel, "Wiki recentchanges queue: $ngrams", $nick);
 	}
-	elsif ($msg =~ m/^!ignore\s(.+)$/i) {
+	elsif ($msg =~ m/^!ignore\s(\S+ +\S.*)$/i) {
 	    my $ign = $1;
+	    my $ignik = (split / /, $ign)[0];
 	    push(@ignorance, $ign);
-	    $self->botspeak($kernel, "Now ignoring: $a", $nick);
+	    $self->botspeak($kernel, "Now ignoring: $ignik", $nick);
 	}
 	elsif ($msg =~ m/^!ignore$/i) {
 	    my $a;
@@ -3258,7 +3264,7 @@ sub on_msg {
 	    kill_bot();
 	}
 	elsif ($msg =~ m/^!help$/i) {
-	    $self->botspeak($kernel, "Commands: !die [msg], !showmsg, !msg a b, !me chan msg, !privme nick msg, !nick a, !say chan msg, !id, !deid, !throttle [a b], !ignore nick msgregexp, !rmignore n, !bones, !togglelogfile, !togglebuglist, !wiki, !join chan, !leave chan, !parsestr str, !parseargs str", $nick);
+	    $self->botspeak($kernel, "Command help: " . $self->{'admin_help_url'}, $nick);
 	} else {
 	    pub_msg($self, $kernel, $nick, $nick, $msg);
 	}
