@@ -126,7 +126,7 @@ sub paramstr_rmpipes {
     return $s;
 }
 
-# paramstr_unescape("a|b|c") -> "a\x01b\x01c"
+# paramstr_escape("a|b|c") -> "a\x01b\x01c"
 sub paramstr_escape {
     my $s = shift || "";
     $s =~ s/\|/\x01/g;
