@@ -195,6 +195,63 @@ sub paramstr_substr {
     return "";
 }
 
+# paramstr_index("foobar|bar") => "3"
+sub paramstr_index {
+    my $s = shift || "";
+    if ($s =~ m/^(.*)\|(.*)$/) {
+	my $str = $1;
+	my $str2 = $2 || "";
+	return index($str, $str2);
+    }
+    return "-1";
+}
+
+# paramstr_rindex("foobar|bar")
+sub paramstr_rindex {
+    my $s = shift || "";
+    if ($s =~ m/^(.*)\|(.*)$/) {
+	my $str = $1;
+	my $str2 = $2 || "";
+	return rindex($str, $str2);
+    }
+    return "-1";
+}
+
+# paramstr_rebase("123|16") changes decimal number to binary, octal or hexadecimal
+sub paramstr_rebase {
+    my $s = shift || "";
+    my $base = 10;
+    my $num = 0;
+    if ($s =~ m/^(.*)\|(.*)$/) {
+	$num = $1;
+	$base = $2;
+	if ($base eq "b") { $base = 2; }
+	elsif ($base eq "o") { $base = 8; }
+	elsif ($base eq "x") { $base = 16; }
+	else { $base = 10; }
+    } else {
+	$num = $s;
+    }
+    return "0" if (!paramstr_isint($base) || !paramstr_isint($num));
+
+    $base = int $base;
+    $num = int $num;
+
+    if ($base == 2) {
+	return sprintf("%b", $num);
+    } elsif ($base == 8) {
+	return sprintf("%o", $num);
+    } elsif ($base == 16) {
+	return sprintf("%x", $num);
+    } else {
+	return $num;
+    }
+
+    return "0";
+}
+
+sub paramstr_reverse { return reverse(shift || ""); }
+
 sub paramstr_lc { return lc(shift || ""); }
 sub paramstr_uc { return uc(shift || ""); }
 sub paramstr_lcfirst { return lcfirst(shift || ""); }

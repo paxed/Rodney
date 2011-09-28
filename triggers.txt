@@ -56,6 +56,10 @@ $UCFIRST(...)      Uppercase parameter's first character.
 $STRLEN(...)	   Return length of parameter, in characters.
 $SUBSTR(...)	   Takes 2 or 3 parameters. Returns part of the first parameter, similar to perl's substr()
 $TRIM(...)	   Remove whitespace from beginning and end of parameter.
+$INDEX(...)	   Takes 2 parameters. Searches for param2 in param1, and returns the starting position in param1. If not found, returns -1
+$RINDEX(...)	   Like $INDEX(), but searches from the end of param1. (Still returns the starting position, though)
+$REVERSE(...)	   Reverse parameter.
+$REBASE(...)	   Takes 2 parameters. Returns parameter1 converted to another base. parameter2 can be one of "2", "8", "16", "b", "o", "x"
 $AN(...)           Prefix parameter string with "an " or "a ".
 $PLURAL(...)	   Return a plural form of parameter.
 $NPLURAL(...)	   Takes 2 parameters, separated by a pipe. if param1 equals 1, returns $AN(param2) else returns $PLURAL(param2)
