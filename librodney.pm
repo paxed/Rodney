@@ -78,9 +78,13 @@ sub paramstr_rnd {
 # paramstr_math("3+(2*4)/2")
 sub paramstr_math {
     my $expr = shift || "";
-
-    return 0 unless $expr =~ /^[-\d\+\*\/\(\)]+$/;
-    return try { Math::Expression::Evaluator->new->parse($expr)->val };
+    $expr = paramstr_unescape($expr);
+    my $m = Math::Expression::Evaluator->new();
+    $m->set_function('abs', sub { abs($_[0]) });
+    $m->set_function('rn2', sub { int(rand($_[0])) });
+    $m->set_function('rnd', sub { int(rand($_[0]) + 1) });
+    my $ret = try { $m->parse($expr)->val };
+    return paramstr_escape($ret);
 }
 
 
