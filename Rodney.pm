@@ -44,7 +44,7 @@ do "learndb.pm";
 do "seendbi.pm";
 do "nhbugs.pm";
 do "messages.pm";
-
+do "nickidlist.pm";
 
 
 my @nh_roles = ('Arc', 'Bar', 'Cav', 'Hea', 'Kni', 'Mon', 'Pri', 'Rog', 'Ran', 'Sam', 'Tou', 'Val', 'Wiz');
@@ -104,6 +104,7 @@ my $learn_db = LearnDB->new();
 my $seen_db = SeenDB->new();
 my $buglist_db = NHBugsDB->new();
 my $user_messages_db = Messages->new();
+my $admin_nicks = NickIdList->new();
 my $dbh;
 
 
@@ -1472,9 +1473,6 @@ sub database_sync {
 
 ################################################# OTHER BOT STUFF
 
-# admins who have identified themselves to the bot
-my @admin_identified;
-
 # id of dcc chat session to show notices/msgs to
 my $send_msg_id = undef;
 
@@ -2769,7 +2767,7 @@ sub can_edit_learndb {
     my $nick = shift;
     my $term = shift;
     if (is_learndb_trigger($term)) {
-	return 1 if (nick_is_identified($nick));
+	return 1 if ($admin_nicks->is_identified($nick));
 	return 0;
     }
     return 1;
@@ -3104,70 +3102,15 @@ sub can_do_privmsg_cmd {
     return $return;
 }
 
-sub nick_is_identified {
-    my $nick = shift;
-    return 1 if ( grep {$_ eq $nick} @admin_identified );
-    return 0;
-}
-
-sub nick_deidentify {
-    my $nick = shift;
-    my $a;
-    my $counter = 0;
-
-    foreach $a (@admin_identified) {
-	if ($a eq $nick) {
-	    splice(@admin_identified, $counter, 1);
-	}
-	$counter++;
-    }
-}
 
 my $parsestr_cmd_args = "";
 
-# Handle privmsg communication.
-sub on_msg {
+# admin commands
+sub admin_msg {
+    my ( $self, $kernel, $who, $nicks, $msg ) = @_;
 
-    my ( $self, $kernel, $who, $nicks, $msg ) =
-      @_[ OBJECT, KERNEL, ARG0, ARG1, ARG2 ];
     my $nick = ( split /!/, $who )[0];
 
-    my $time = localtime( time() );
-    print "[$self->{'Nick'} $time] <$nick> $msg\n";
-
-    $nick =~ tr/A-Z/a-z/;
-
-    check_messages($self, $kernel, $nick, $nick);
-
-    return if (line_is_ignored($who, $msg));
-
-    $self->bot_priv_msg($kernel, "<$nick> $msg") if ((defined $send_msg_id) && ($send_msg_id ne $nick));
-
-    if ($msg =~ m/^!decode\s(.+)$/i) {
-# !decode <recordline>
-	my $line = $1;
-	$self->botspeak($kernel, demunge_recordline($line, 9), $nick);
-    }
-    elsif (priv_and_pub_msg($self, $kernel, $nick, $nick, $msg) == 0) {
-#	handled in priv_and_pub_msg
-    }
-    elsif ($msg =~ m/^!id\s(.*)$/i) {
-# !id <password>
-	my $pw = $1;
-	if (!nick_is_identified($nick)) {
-	    if ($pw eq $self->{'Apass'}) {
-		push(@admin_identified, $nick);
-		$self->botspeak($kernel, "Hello, $nick", $nick);
-		if (!(defined $send_msg_id)) {
-		    $self->botspeak($kernel, "Sending bot privmsgs to you.", $nick);
-		    $send_msg_id = $nick;
-		} else {
-		    $self->botspeak($kernel, "Bot privmsgs are sent to $send_msg_id.", $nick);
-		}
-	    }
-	}
-    }
-    elsif (nick_is_identified($nick)) {
 	if ($msg =~ m/^!say\s(\S+)\s(.+)$/i) {
 	    my $chn = $1;
 	    my $sayeth = $2;
@@ -3292,14 +3235,14 @@ sub on_msg {
 	    $self->botspeak($kernel, "Throttle,  priv: $privmsg_throttle, pub: $pubmsg_throttle", $nick);
 	}
 	elsif ($msg =~ m/^!deid$/i) {
-	    nick_deidentify($nick);
+	    $admin_nicks->nick_deidentify($nick);
 	    if ((defined $send_msg_id) && ($send_msg_id eq $nick)) {
 		undef $send_msg_id;
 	    }
 	    $self->botspeak($kernel, "De-identified. Bye.", $nick);
 	}
 	elsif ($msg =~ m/^!id$/i) {
-	    $self->botspeak($kernel, "Identified nicks: ".join(",", @admin_identified), $nick);
+	    $self->botspeak($kernel, "Identified nicks: ". $admin_nicks->get_identified_nicks(), $nick);
 	}
 	elsif ($msg =~ m/^!parsestr\s(.+)$/) {
 	    my $b = $self->parse_strvariables($nick, $nick, $parsestr_cmd_args, $1);
@@ -3336,6 +3279,52 @@ sub on_msg {
 	} else {
 	    pub_msg($self, $kernel, $nick, $nick, $msg);
 	}
+}
+
+# Handle privmsg communication.
+sub on_msg {
+
+    my ( $self, $kernel, $who, $nicks, $msg ) =
+      @_[ OBJECT, KERNEL, ARG0, ARG1, ARG2 ];
+    my $nick = ( split /!/, $who )[0];
+
+    my $time = localtime( time() );
+    print "[$self->{'Nick'} $time] <$nick> $msg\n";
+
+    $nick =~ tr/A-Z/a-z/;
+
+    check_messages($self, $kernel, $nick, $nick);
+
+    return if (line_is_ignored($who, $msg));
+
+    $self->bot_priv_msg($kernel, "<$nick> $msg") if ((defined $send_msg_id) && ($send_msg_id ne $nick));
+
+    if ($msg =~ m/^!decode\s(.+)$/i) {
+# !decode <recordline>
+	my $line = $1;
+	$self->botspeak($kernel, demunge_recordline($line, 9), $nick);
+    }
+    elsif (priv_and_pub_msg($self, $kernel, $nick, $nick, $msg) == 0) {
+#	handled in priv_and_pub_msg
+    }
+    elsif ($msg =~ m/^!id\s(.*)$/i) {
+# !id <password>
+	my $pw = $1;
+	if (!$admin_nicks->is_identified($nick)) {
+	    if ($pw eq $self->{'Apass'}) {
+		$admin_nicks->nick_identify($nick);
+		$self->botspeak($kernel, "Hello, $nick", $nick);
+		if (!(defined $send_msg_id)) {
+		    $self->botspeak($kernel, "Sending bot privmsgs to you.", $nick);
+		    $send_msg_id = $nick;
+		} else {
+		    $self->botspeak($kernel, "Bot privmsgs are sent to $send_msg_id.", $nick);
+		}
+	    }
+	}
+    }
+    elsif ($admin_nicks->is_identified($nick)) {
+	$self->admin_msg($kernel, $who, $nicks, $msg);
     }
 }
 
