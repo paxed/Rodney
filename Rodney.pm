@@ -2501,8 +2501,6 @@ sub priv_and_pub_msg {
 	my $usrmsgs = $user_messages_db->get_messages($nick);
 	if ($usrmsgs) {
 	    $self->botspeak($kernel, $usrmsgs, $channel);
-	} else {
-	    $self->botspeak($kernel, "$nick: You have no new messages.", $channel);
 	}
     }
     elsif ($msg =~ m/^!learn\s+info\s+(.+)$/i) {
@@ -2521,6 +2519,7 @@ sub priv_and_pub_msg {
 	do_pubcmd_gamesby($self,$kernel,$channel,$nick);
     }
     elsif ($msg =~ m/^!streak(\s+\S+\s*)?$/) {
+# !streak <name>
 	my $plr = $1 || $nick;
 	$plr =~ s/^\s+//;
 	do_pubcmd_streak($self, $kernel, $channel, $plr);
