@@ -2931,51 +2931,6 @@ sub handle_learndb_trigger {
     }
 }
 
-# decode_xlog_datastr("conduct", "0x102")
-sub decode_xlog_datastr {
-    my ($a, $b) = @_;
-    my $ret = "";
-    if ($a =~ m/realtime/) {
-	$ret = time_diff($b, 1);
-    } elsif ($a =~ m/nconducts/) {
-	$ret = $b;
-    } elsif ($a =~ m/conduct/) {
-	$ret  = decode_conduct_part($b, 0x0001, "Foo");
-	$ret .= decode_conduct_part($b, 0x0002, "Vgn");
-	$ret .= decode_conduct_part($b, 0x0004, "Vgt");
-	$ret .= decode_conduct_part($b, 0x0008, "Ath");
-	$ret .= decode_conduct_part($b, 0x0010, "Wea");
-	$ret .= decode_conduct_part($b, 0x0020, "Pac");
-	$ret .= decode_conduct_part($b, 0x0040, "Ill");
-	$ret .= decode_conduct_part($b, 0x0080, "Ppl");
-	$ret .= decode_conduct_part($b, 0x0100, "Psf");
-	$ret .= decode_conduct_part($b, 0x0200, "Wis");
-	$ret .= decode_conduct_part($b, 0x0400, "Art");
-	$ret .= decode_conduct_part($b, 0x0800, "Gen");
-    } elsif ($a =~ m/^achieve$/) {
-	$ret  = decode_conduct_part($b, 0x0001, "Bel");
-	$ret .= decode_conduct_part($b, 0x0002, "Geh");
-	$ret .= decode_conduct_part($b, 0x0004, "Can");
-	$ret .= decode_conduct_part($b, 0x0008, "Boo");
-	$ret .= decode_conduct_part($b, 0x0010, "Inv");
-	$ret .= decode_conduct_part($b, 0x0020, "Amu");
-	$ret .= decode_conduct_part($b, 0x0040, "Pla");
-	$ret .= decode_conduct_part($b, 0x0080, "Ast");
-	$ret .= decode_conduct_part($b, 0x0100, "Asc");
-	$ret .= decode_conduct_part($b, 0x0200, "Luc");
-	$ret .= decode_conduct_part($b, 0x0400, "Sok");
-	$ret .= decode_conduct_part($b, 0x0800, "Med");
-    } elsif ($a =~ m/starttime/ || $a =~ m/endtime/) {
-	my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime($b);
-	$ret = sprintf("%04d%02d%02d %02d:%02d:%02d", ($year+1900), ($mon+1), $mday, $hour,$min,$sec);
-    } elsif (($a =~ m/deathdnum/) || ($a =~ m/deathlev/)) {
-	$ret = $b;
-	$ret = $nh_dnums{$b} if (($b < 0) || ($a =~ m/deathdnum/));
-    } else {
-	$ret = $b;
-    }
-    return $ret;
-}
 
 # Commands for public
 sub pub_msg {
