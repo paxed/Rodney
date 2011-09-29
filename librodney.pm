@@ -364,7 +364,7 @@ sub makeplur {
 	return $s.$excess;
     } elsif ($s =~ m/f$/) {
 	if ($s =~ m/[lraeiouyAEIOUY]f$/) {
-	    $s =~ s/$/ves/;
+	    $s =~ s/f$/ves/;
 	    return $s.$excess;
 	} elsif ($s =~ m/staf$/) {
 	    $s =~ s/f$/ves/;
