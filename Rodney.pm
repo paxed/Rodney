@@ -2790,7 +2790,7 @@ sub log_channel_msg_flush {
 # paramstr_if("integer_boolean_value|do_if_non-zero|do_if_zero")
 sub paramstr_if {
     my $str = shift;
-    if ($str =~ m/^(.+)\|(.*)\|(.*)\|(.*)$/) {
+    if ($str =~ m/^(.*)\|(.*)\|(.*)\|(.*)$/) {
 	my $stra = $1;
 	my $strb = $2;
 	my $do_eq = $3 || "";

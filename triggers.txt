@@ -81,7 +81,7 @@ $LG(...)	   Perform !lg query (minus !lg and -dump), for example "$LG(scorchgeek
 $RMPIPES(...)	   Replaces the pipe characters with spaces.
 $ESCAPE(...)       Escapes pipe characters so they don't interfere with other commands.
 $UNESCAPE(...)     Replaces escaped pipe characters with pipes.
-$CALC(...)         Evaluate parameter. Only accepts simple integer values and +, -, * and /, for example "$CALC(1+(2*3)/4)"
+$CALC(...)         Evaluate parameter as a mathematical expression. Also accepts functions rnd(), rn2(), abs().
 
 $ISNUM(...)	   Returns 1 if parameter contains only digits, else returns 0.
 $ISINT(...)	   Returns 1 if parameter contains only digits and optionally starts with plus or minus. Otherwise returns 0.
