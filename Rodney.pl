@@ -74,6 +74,12 @@ my $botdatapath = '/opt/nethack/rodney';
 			     user => 'CHANGEME',
 			     pass => 'CHANGEME'
 			 },
+			 nethackwikidb => {
+			     dbtype => 'mysql',
+			     db => 'nethackwikidb',
+			     user => 'CHANGEME',
+			     pass => 'CHANGEME'
+			 },
 			 dgldb => {
 			     dbtype => 'SQLite',
 			     db => $chrootpath.'/dgldir/dgamelaunch.db'

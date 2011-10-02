@@ -113,6 +113,7 @@ my @wiki_datagram_queue = ();
 my $xlogfiledb;
 my $shorturldb;
 my $dgldb;
+my $nethackwikidb;
 
 use constant DATAGRAM_MAXLEN => 1024;
 
@@ -170,6 +171,7 @@ sub run {
     $xlogfiledb = $self->{'xlogfiledb'};
     $shorturldb = $self->{'shorturldb'};
     $dgldb = $self->{'dgldb'};
+    $nethackwikidb = $self->{'nethackwikidb'};
 
     @nh_monsters = read_textdata_file($self->{'nh_monsters_file'});
     @nh_objects = read_textdata_file($self->{'nh_objects_file'});
@@ -956,6 +958,61 @@ sub paramstr_playername {
     my $rowcnt = $sth->fetchrow_hashref();
     return $rowcnt->{'username'} if ($rowcnt->{'username'});
     return "";
+}
+
+sub paramstr_iswikipage {
+    my $str = shift || "";
+    if (length($str) > 0) {
+        my $db = DBI->connect("dbi:".$nethackwikidb->{dbtype}.":".$nethackwikidb->{db}.":localhost",
+                              $nethackwikidb->{user}, $nethackwikidb->{pass},
+                              {AutoCommit => 1, PrintError => 1});
+        if ($db->err()) { print "$DBI::errstr\n"; return ""; }
+        if ($db) {
+            $str =~ tr/ /_/;
+            my $sth = $db->prepare("SELECT count(1) AS numpages FROM page WHERE LOWER(CONVERT(page_title USING latin1)) LIKE ".$db->quote(lc($str))." AND page_namespace=0");
+            $sth->execute();
+            my $rowcnt = $sth->fetchrow_hashref();
+            return 0 if ($rowcnt->{'numpages'} != 1);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+sub paramstr_wikipage {
+    my $str = shift || "";
+    if (length($str) > 0) {
+        my $db = DBI->connect("dbi:".$nethackwikidb->{dbtype}.":".$nethackwikidb->{db}.":localhost",
+                              $nethackwikidb->{user}, $nethackwikidb->{pass},
+                              {AutoCommit => 1, PrintError => 1});
+        if ($db->err()) { print "$DBI::errstr\n"; return ""; }
+        if ($db) {
+            $str =~ tr/ /_/;
+            my $sth = $db->prepare("SELECT page_title, count(1) as numpages FROM page WHERE LOWER(CONVERT(page_title USING latin1)) LIKE ".$db->quote(lc($str))." AND page_namespace=0");
+            $sth->execute();
+            my $rowcnt = $sth->fetchrow_hashref();
+            return $rowcnt->{'page_title'} if ($rowcnt->{'page_title'} && ($rowcnt->{'numpages'} == 1));
+        }
+    }
+    return "";
+}
+
+sub paramstr_nwikipages {
+    my $str = shift || "";
+    if (length($str) > 0) {
+        my $db = DBI->connect("dbi:".$nethackwikidb->{dbtype}.":".$nethackwikidb->{db}.":localhost",
+                              $nethackwikidb->{user}, $nethackwikidb->{pass},
+                              {AutoCommit => 1, PrintError => 1});
+        if ($db->err()) { print "$DBI::errstr\n"; return ""; }
+        if ($db) {
+            $str =~ tr/ /_/;
+            my $sth = $db->prepare("SELECT count(1) AS numpages FROM page WHERE LOWER(CONVERT(page_title USING latin1)) LIKE ".$db->quote(lc($str))." AND page_namespace=0");
+            $sth->execute();
+            my $rowcnt = $sth->fetchrow_hashref();
+            return $rowcnt->{'numpages'} if ($rowcnt->{'numpages'});
+        }
+    }
+    return 0;
 }
 
 sub buglist_update {
@@ -2811,7 +2868,10 @@ sub parse_strvariables_param {
 	'$ISALPHA'    => \&paramstr_isalpha,
 	'$ISALNUM'    => \&paramstr_isalphanum,
 	'$ISPLR'      => \&paramstr_is_used_playername,
-	'$PLRNAME'    => \&paramstr_playername
+	'$PLRNAME'    => \&paramstr_playername,
+	'$ISWIKIPAGE' => \&paramstr_iswikipage,
+	'$NWIKIPAGES' => \&paramstr_nwikipages,
+	'$WIKIPAGE'   => \&paramstr_wikipage
 	);
 
     foreach my $tmp (keys %paramrepls) {
