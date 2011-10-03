@@ -902,7 +902,7 @@ sub mangle_sql_query {
     $sql .= " offset ".$skip if ($skip);
 
     if ($do_count == 1) {
-	$sql = "select count(1) from (".$sql.")" if ($groupby);
+	$sql = "select count(1) from (".$sql.") as tempdb" if ($groupby);
     }
 
     my %ret = (sql => $sql, fields => join(",",@getfields));
