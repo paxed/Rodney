@@ -3404,6 +3404,24 @@ sub on_wiki_datagram {
     }
 }
 
+sub mangle_wiki_datagram_msg {
+    my $message = shift || "";
+
+    $message =~ s/\003\d+//g; # Stupid MW outputs goddamned color codes.
+    $message =~ s/\003//g;
+
+    if ($message =~ m/^(.*) (https?:\/\/\S+) (.+)$/i) {
+        my $preu = $1;
+        my $url = $2;
+        my $postu = $3;
+        if ($preu =~ m/]]\s(\S*)$/) {
+            return "" if ($1 =~ m/B/); # bot edit
+        }
+        $message = $preu." ".shorten_url($url)." ".$postu;
+    }
+    return $message;
+}
+
 sub handle_wiki_datagrams {
     my ( $self, $kernel ) = @_[ OBJECT, KERNEL ];
 
@@ -3413,38 +3431,17 @@ sub handle_wiki_datagrams {
     $kernel->delay('handle_wiki_data' => 10);
 
     my $ngrams = scalar(@wiki_datagram_queue);
+    my $data;
 
-    if ($ngrams > 1) {
-	my $data = pop(@wiki_datagram_queue);
-	$message = $data->{"message"};
-	if ($message =~ m/^(.*) (http:\/\/\S+) (\* .+)$/i) {
-	    my $preu = $1;
-	    my $url = $2;
-	    my $postu = $3;
-	    if ($preu =~ m/]]\s(\S*)$/) {
-		if ($1 =~ m/B/) { # bot edit
-		    return;
-		}
-	    }
-	    $message = $preu." ".shorten_url($url)." ".$postu;
-	}
-	$self->botspeak($kernel, "$ngrams changes, newest is: $message", $chn);
-	@wiki_datagram_queue = ();
-    } elsif ($ngrams > 0) {
-	my $data = pop(@wiki_datagram_queue);
-	$message = $data->{"message"};
-	if ($message =~ m/^(.*) (http:\/\/\S+) (\* .+)$/i) {
-	    my $preu = $1;
-	    my $url = $2;
-	    my $postu = $3;
-	    if ($preu =~ m/]]\s(\S*)$/) {
-		if ($1 =~ m/B/) { # bot edit
-		    return;
-		}
-	    }
-	    $message = $preu." ".shorten_url($url)." ".$postu;
-	}
-	$self->botspeak($kernel, "$message", $chn);
+    if ($ngrams > 0) {
+        $data = pop(@wiki_datagram_queue);
+        $message = mangle_wiki_datagram_msg($data->{"message"});
+        if ($ngrams > 1) {
+            $self->botspeak($kernel, "$ngrams changes, newest is: $message", $chn) if ($message ne "");
+            @wiki_datagram_queue = ();
+        } elsif ($ngrams > 0) {
+            $self->botspeak($kernel, "$message", $chn) if ($message ne "");
+        }
     }
 }
 
