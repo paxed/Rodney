@@ -2498,10 +2498,15 @@ sub priv_and_pub_msg {
     elsif ( $msg =~ m/^!rn[gd]\s+(.+)$/i ) {
 # !rng
 # !rnd
-        my @arg = split ( / /, $msg );
+	my $param = $1;
+        my @arg;
 	my $a;
 	my $retval;
-	shift @arg; # remove the '!rng' prefix
+	if ($param =~ m/\|/) {
+	    @arg = split(/\|/, $param);
+	} else {
+	    @arg = split(/ /, $param);
+	}
 	if ($arg[0] =~ /\@roles?/i) { $retval = $nh_roles[rand @nh_roles]; }
 	elsif ($arg[0] =~ /\@races?/i) { $retval = $nh_races[rand @nh_races]; }
 	elsif ($arg[0] =~ /\@genders?/i || $arg[0] =~ /\@sex(es)?/i) { $retval = $nh_genders[rand @nh_genders]; }
