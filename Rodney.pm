@@ -3439,7 +3439,7 @@ sub on_wiki_datagram {
 sub mangle_wiki_datagram_msg {
     my $message = shift || "";
 
-    $message =~ s/\003\d+//g; # Stupid MW outputs goddamned color codes.
+    $message =~ s/\003\d\d?//g; # Stupid MW outputs goddamned color codes.
     $message =~ s/\003//g;
 
     if ($message =~ m/^(.*) (https?:\/\/\S+) (.+)$/i) {
