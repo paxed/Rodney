@@ -1343,13 +1343,21 @@ sub setup_tail {
     my $fname = $self->{'nh_logfile'};
     my $livefname = $self->{'nh_livelogfile'};
     print "setup_tail\n";
-    open($LOGFILE,$fname) || die ("Can't open file");
-    seek($LOGFILE,0,2);
-    $curpos = tell($LOGFILE);
+    if (open($LOGFILE,$fname)) {
+	seek($LOGFILE,0,2);
+	$curpos = tell($LOGFILE);
+    } else {
+	print "Can't open file $fname, logfile checking disabled.\n";
+	$self->{'CheckLog'} = 0;
+    }
 
-    open($LIVELOGFILE,$livefname) || die ("Can't open file");
-    seek($LIVELOGFILE,0,2);
-    $livelog_pos = tell($LIVELOGFILE);
+    if (open($LIVELOGFILE,$livefname)) {
+	seek($LIVELOGFILE,0,2);
+	$livelog_pos = tell($LIVELOGFILE);
+    } else {
+	print "Can't open file $livefname, logfile checking disabled.\n";
+	$self->{'CheckLog'} = 0;
+    }
 }
 
 sub on_d_tick {
@@ -2771,9 +2779,16 @@ sub log_channel_msg {
 	my $path = (!defined $self->{'LogPath'}) ? $ENV{'HOME'} : $self->{'LogPath'};
 	my $chan = $channel;
 	my $logf = "$path/channels/$chan.log";
-	open(my $tmpfile, ">>$logf") || die "failed to open channel log file $logf.";
-	$channel_log_data{$channel} = { flushtime => 0, filehandle => $tmpfile };
+	if (open(my $tmpfile, ">>$logf")) {
+	    $channel_log_data{$channel} = { flushtime => 0, filehandle => $tmpfile, disabled => 0 };
+	} else {
+	    print "Failed to open channel log file $logf.\n";
+	    $channel_log_data{$channel} = { disabled => 1 };
+	}
     }
+
+    return if ($channel_log_data{$channel}{disabled});
+
     my $time = localtime( time() );
     my $fh = $channel_log_data{$channel}{filehandle};
     print $fh "[$time] <$nick> $msg\n";
@@ -2790,6 +2805,7 @@ sub log_channel_msg {
 
 sub log_channel_msg_flush {
     foreach my $channel (keys %channel_log_data) {
+	next if ($channel_log_data{$channel}{disabled});
 	my $fh = $channel_log_data{$channel}{filehandle};
 	my $ofh = select $fh;
 	$| = 1;

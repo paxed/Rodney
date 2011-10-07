@@ -22,11 +22,20 @@ sub new {
 
 sub db_connect {
     my $self = shift;
-    $self->{'dbh'} = DBI->connect("dbi:SQLite:dbname=".$self->{'dbfile'},"","",{AutoCommit => 1, PrintError => 1});
+
+    return if (defined $self->{'disabled'} && ($self->{'disabled'} == 1));
+
+    if (!($self->{'dbh'} = DBI->connect("dbi:SQLite:dbname=".$self->{'dbfile'},"","",{AutoCommit => 1, PrintError => 1}))) {
+	$self->{'disabled'} = 1;
+	print "Seen db disabled, could not connect to database.\n";
+    } else {
+	$self->{'disabled'} = 0;
+    }
 }
 
 sub db_disconnect {
     my $self = shift;
+    return if ($self->{'disabled'});
 #    $self->{'dbh'}->commit();
     $self->{'dbh'}->disconnect();
 }
@@ -49,6 +58,8 @@ sub sync {
 # $self->db_disconnect();
 sub seen_updatenick {
     my ($self, $nick, $time, $text) = @_;
+
+    return if ($self->{'disabled'});
 
     my $dbh = $self->{'dbh'};
 
@@ -126,6 +137,8 @@ sub seen_get {
     my $dbdata;
 
     my $retstr = "";
+
+    return "Seen DB disabled." if ($self->{'disabled'});
 
     $self->db_connect();
 

@@ -13,6 +13,7 @@ cpan -i URI::Escape
 cpan -i Math::Expression::Evaluator
 cpan -i Try::Tiny
 cpan -i Thread::Queue
+cpan -i DBD::SQLite
 apt-get install bsdgames  # for pom
 
 

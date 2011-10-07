@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 use strict;
 
-do "Rodney.pm";
+do "Rodney.pm" or die $@;
 
 my $chrootpath  = '/opt/nethack/nethack.alt.org';
 my $pub_url     = 'http://alt.org/nethack';

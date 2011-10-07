@@ -26,16 +26,18 @@ sub init {
     my $self = shift;
     my $learnfile = shift || $self->{'dbfile'};
 
-    open(LEARNFILE, $learnfile) || die("can't open learn file $learnfile");
-    while(<LEARNFILE>) {
-	my ($user,$term,$def) = /^(\S+)\t(\S+)\t(.*)$/;
-	if ($term) {
-	    push @{$self->{'db'}{$term}}, [$user, $def];
+    if (open(LEARNFILE, $learnfile)) {
+	while(<LEARNFILE>) {
+	    my ($user,$term,$def) = /^(\S+)\t(\S+)\t(.*)$/;
+	    if ($term) {
+		push @{$self->{'db'}{$term}}, [$user, $def];
+	    }
 	}
+	$self->{'dbfile'} = $learnfile if (!$self->{'dbfile'});
+    } else {
+	print "Cannot open learndb file $learnfile.\n";
     }
     $self->{'dbchanged'} = 0;
-
-    $self->{'dbfile'} = $learnfile if (!$self->{'dbfile'});
 }
 
 

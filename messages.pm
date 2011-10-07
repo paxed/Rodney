@@ -22,7 +22,15 @@ sub new {
 
 sub db_connect {
     my $self = shift;
-    $self->{'dbh'} = DBI->connect("dbi:SQLite:dbname=".$self->{'dbfile'},"","",{AutoCommit => 1, PrintError => 1});
+
+    return if (defined $self->{'disabled'} && ($self->{'disabled'} == 1));
+
+    if (!($self->{'dbh'} = DBI->connect("dbi:SQLite:dbname=".$self->{'dbfile'},"","",{AutoCommit => 1, PrintError => 1}))) {
+	$self->{'disabled'} = 1;
+	print "Message db disabled, could not connect to database.\n";
+    } else {
+	$self->{'disabled'} = 0;
+    }
 }
 
 sub db_disconnect {
@@ -46,6 +54,8 @@ sub have_messages {
     my ($self, $nick) = @_;
 
     $self->db_connect();
+
+    return 0 if ($self->{'disabled'});
 
     $nick =~ tr/A-Z/a-z/;
 
@@ -77,6 +87,8 @@ sub leave_message {
 
     $self->db_connect();
 
+    return 1 if ($self->{'disabled'});
+
     my $dbh = $self->{'dbh'};
 
     my $sth = $dbh->prepare("INSERT INTO messagesdb (name,sender,msg,lefttime,notified) VALUES (".
@@ -98,6 +110,8 @@ sub get_messages {
     my ($self, $nick) = @_;
 
     $self->db_connect();
+
+    return "" if ($self->{'disabled'});
 
     $nick =~ tr/A-Z/a-z/;
 

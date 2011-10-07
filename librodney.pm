@@ -83,8 +83,8 @@ sub decode_conduct_part {
 
 
 sub read_textdata_file {
-    my $fname = shift || die "no textdata file given";
-    open(my $fh, $fname) || die "cannot read text data file $fname.";
+    my $fname = shift || return ("no textdata file given");
+    open(my $fh, $fname) || return ("cannot read text data file $fname.");
     my @data = <$fh>;
     close($fh);
     foreach (@data) { $_ =~ s/\n$//; }
