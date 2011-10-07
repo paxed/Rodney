@@ -2847,7 +2847,7 @@ sub can_edit_learndb {
 
 # parses "$FOO(blah)" variables
 sub parse_strvariables_param {
-    my $b = shift;
+    my $str = shift;
 
     my %paramrepls = (
 	'$AN'         => \&an,
@@ -2890,17 +2890,17 @@ sub parse_strvariables_param {
 	'$WIKIPAGE'   => \&paramstr_wikipage
 	);
 
-    foreach my $tmp (keys %paramrepls) {
-	while ($b =~ m/^(.*)\Q$tmp\E(\(.+)$/) {
+    foreach my $tmp (sort { length($b) <=> length($a) } keys %paramrepls) {
+	while ($str =~ m/^(.*)\Q$tmp\E(\(.+)$/) {
          my $prefix = $1 || "";
 	 my $after  = $2 || "";
 	 my $inner  = get_inner_str($after);
 	 my $suffix = substr($after, length($inner)+2); # +2 for parenthesis
          my $middle = &{ $paramrepls{$tmp} }(parse_strvariables_param($inner));
-         $b = $prefix . ($middle ? $middle : '') . $suffix;
+         $str = $prefix . ($middle ? $middle : '') . $suffix;
 	}
     }
-    return $b;
+    return $str;
 }
 
 sub parse_strvariables {
@@ -2935,7 +2935,7 @@ sub parse_strvariables {
     $curdate =~ s/\n$//;
 
     my $selfnick = $self->{'Nick'};
-    my $b = $string;
+    my $str = $string;
 
 
     my %simplerepls = (
@@ -2965,13 +2965,13 @@ sub parse_strvariables {
 	'$DATE'     => $curdate
 	);
 
-    foreach my $tmp (keys %simplerepls) {
-	$b =~ s/\Q$tmp\E\b/$simplerepls{$tmp}/g;
+    foreach my $tmp (sort { length($b) <=> length($a) } keys %simplerepls) {
+	$str =~ s/\Q$tmp\E\b/$simplerepls{$tmp}/g;
     }
 
-    $b = parse_strvariables_param($b);
+    $str = parse_strvariables_param($str);
 
-    return paramstr_unescape($b);
+    return paramstr_unescape($str);
 }
 
 sub handle_learndb_trigger {
