@@ -64,7 +64,7 @@ sub seen_updatenick {
     my $dbh = $self->{'dbh'};
 
     my $sth = $dbh->prepare("SELECT count(*) FROM seendb WHERE name=".$dbh->quote($nick));
-    if ($dbh->err()) { print "$DBI::errstr\n"; return; }
+    if ($dbh->err()) { print "$DBI::errstr\n"; $self->{'disabled'} = 1; return; }
     $sth->execute();
 
     my $rowcnt = $sth->fetchrow_hashref();
@@ -78,7 +78,7 @@ sub seen_updatenick {
 			     $dbh->quote($text).", ".
 			     $dbh->quote($time).")");
     }
-    if ($dbh->err()) { print "$DBI::errstr\n"; return; }
+    if ($dbh->err()) { print "$DBI::errstr\n"; $self->{'disabled'} = 1; return; }
     $sth->execute();
 }
 
@@ -144,7 +144,7 @@ sub seen_get {
 
     my $dbh = $self->{'dbh'};
     my $sth = $dbh->prepare("SELECT seentime,seentext FROM seendb WHERE name=".$dbh->quote($nick));
-    if ($dbh->err()) { print "$DBI::errstr\n"; return; }
+    if ($dbh->err()) { print "$DBI::errstr\n"; $self->{'disabled'} = 1; return; }
     $sth->execute();
 
     while ($dbdata = $sth->fetchrow_hashref()) {

@@ -62,13 +62,13 @@ sub have_messages {
     my $dbh = $self->{'dbh'};
 
     my $sth = $dbh->prepare("SELECT count(*) FROM messagesdb WHERE name=".$dbh->quote($nick)." and notified='false'");
-    if ($dbh->err()) { print "$DBI::errstr\n"; return 0; }
+    if ($dbh->err()) { print "$DBI::errstr\n"; $self->{'disabled'} = 1; return 0; }
     $sth->execute();
 
     my $rowcnt = $sth->fetchrow_hashref();
 
     $sth = $dbh->prepare("UPDATE messagesdb SET notified='true' WHERE name=".$dbh->quote($nick)." and notified='false'");
-    if ($dbh->err()) { print "$DBI::errstr\n"; } else {
+    if ($dbh->err()) { print "$DBI::errstr\n"; $self->{'disabled'} = 1; } else {
 	$sth->execute();
     }
 
@@ -97,7 +97,7 @@ sub leave_message {
 			    $dbh->quote($msg).", ".
 			    $dbh->quote($time).", 'false')");
 
-    if ($dbh->err()) { print "$DBI::errstr\n"; return 0; }
+    if ($dbh->err()) { print "$DBI::errstr\n"; $self->{'disabled'} = 1; return 0; }
     $sth->execute();
 
     $self->db_disconnect();
@@ -119,7 +119,7 @@ sub get_messages {
 
     my $sth = $dbh->prepare("SELECT sender,msg,lefttime FROM messagesdb where name=".$dbh->quote($nick)." ORDER BY lefttime ASC");
 
-    if ($dbh->err()) { print "$DBI::errstr\n"; return; }
+    if ($dbh->err()) { print "$DBI::errstr\n"; $self->{'disabled'} = 1; return; }
     $sth->execute();
 
     my @ret;
@@ -141,7 +141,7 @@ sub get_messages {
     }
 
     $sth = $dbh->prepare("DELETE FROM messagesdb WHERE name=".$dbh->quote($nick));
-    if ($dbh->err()) { print "$DBI::errstr\n"; } else {
+    if ($dbh->err()) { print "$DBI::errstr\n"; $self->{'disabled'} = 1; } else {
 	$sth->execute();
     }
 

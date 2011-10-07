@@ -2861,6 +2861,9 @@ sub can_edit_learndb {
     return 1;
 }
 
+
+my @sorted_paramrepl_keys;
+
 # parses "$FOO(blah)" variables
 sub parse_strvariables_param {
     my $str = shift;
@@ -2906,7 +2909,9 @@ sub parse_strvariables_param {
 	'$WIKIPAGE'   => \&paramstr_wikipage
 	);
 
-    foreach my $tmp (sort { length($b) <=> length($a) } keys %paramrepls) {
+    @sorted_paramrepl_keys = sort { length($b) <=> length($a) } keys %paramrepls if (!@sorted_paramrepl_keys);
+
+    foreach my $tmp (@sorted_paramrepl_keys) {
 	while ($str =~ m/^(.*)\Q$tmp\E(\(.+)$/) {
          my $prefix = $1 || "";
 	 my $after  = $2 || "";
