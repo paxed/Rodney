@@ -63,6 +63,7 @@ $REBASE(...)	   Takes 2 parameters. Returns parameter1 converted to another base
 $AN(...)           Prefix parameter string with "an " or "a ".
 $PLURAL(...)	   Return a plural form of parameter.
 $NPLURAL(...)	   Takes 2 parameters, separated by a pipe. if param1 equals 1, returns $AN(param2) else returns $PLURAL(param2)
+$SSUFFIX(...)	   Return possessive form for parameter.
 $RND(X)            Returns a random number between 0 and X, inclusive.
 $RND(N,M)	   Returns a random number between N and M, inclusive.
 $RND(NdM)	   Returns a random die roll with dice NdM.

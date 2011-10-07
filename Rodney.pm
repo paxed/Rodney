@@ -1635,6 +1635,16 @@ sub on_action {
     log_channel_msg($self, $channel, $nick, "*$nick ".$msg);
 
     $seen_db->seen_log($nick, "acted out \"$nick $msg\"");
+
+    $msg =~ s/\s+/ /g;
+    $msg =~ s/[!,\.]+$//;
+    $msg = paramstr_trim(lc($msg));
+    $msg =~ s/\b\L$self->{'Nick'}\E\b/\$self/g;
+    $msg =~ tr/ /_/;
+
+# eg. "paxed kicks Rodney" -> "$act_kicks_$self"
+
+    $self->handle_learndb_trigger($kernel, $channel, $nick, '$act_'.$msg);
 }
 
 # Handle mode changes
@@ -2843,6 +2853,7 @@ sub parse_strvariables_param {
 	'$AN'         => \&an,
 	'$PLURAL'     => \&makeplur,
 	'$NPLURAL'    => \&paramstr_nplural,
+	'$SSUFFIX'    => \&paramstr_possessive,
 	'$URLENC'     => \&uri_escape,
 	'$RND'        => \&paramstr_rnd,
 	'$SHUFFLE'    => \&paramstr_shuffle,

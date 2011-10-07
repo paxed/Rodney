@@ -115,6 +115,13 @@ sub paramstr_rot13 {
     return $s;
 }
 
+sub paramstr_possessive {
+    my $s = shift || "";
+    return $s."s" if ($s =~ m/^it$/i);
+    return $s."'" if ($s =~ m/s$/i);
+    return $s."'s";
+}
+
 # return a random value from str_rnd("2,5") or str_rnd("3d6");
 sub paramstr_rnd {
     my $s = shift;
