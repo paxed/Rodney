@@ -1591,6 +1591,17 @@ sub on_time {
     $self->bot_priv_msg($kernel, "CTCP TIME from $nick");
 }
 
+sub mangle_msg_for_trigger {
+    my $self = shift;
+    my $msg = shift || "";
+    $msg =~ s/\s+/ /g;
+    $msg =~ s/[!,\.]+$//;
+    $msg = paramstr_trim(lc($msg));
+    $msg =~ s/\b\L$self->{'Nick'}\E\b/\$self/g;
+    $msg =~ tr/ /_/;
+    return $msg;
+}
+
 # Log actions
 sub on_action {
     my ( $self, $kernel, $who, $where, $msg ) =
@@ -1605,12 +1616,7 @@ sub on_action {
 
     $seen_db->seen_log($nick, "acted out \"$nick $msg\"");
 
-    $msg =~ s/\s+/ /g;
-    $msg =~ s/[!,\.]+$//;
-    $msg = paramstr_trim(lc($msg));
-    $msg =~ s/\b\L$self->{'Nick'}\E\b/\$self/g;
-    $msg =~ tr/ /_/;
-
+    $msg = $self->mangle_msg_for_trigger($msg);
 # eg. "paxed kicks Rodney" -> "$act_kicks_$self"
 
     $self->handle_learndb_trigger($kernel, $channel, $nick, '$act_'.$msg);
@@ -3007,6 +3013,8 @@ sub handle_learndb_trigger {
     my $term = $channel.":".$arglist[0];
     my @a;
 
+    my $retval = 0;
+
     $output = $output || $channel;
     $term =~ s/ /_/g;
     @a = $learn_db->query($term);
@@ -3026,11 +3034,14 @@ sub handle_learndb_trigger {
 	    $l =~ s/^\x02ACT\s//;
 	    if ($do_me) {
 		$self->botaction($kernel, $l, $output);
+		$retval = 1;
 	    } else {
 		$self->botspeak($kernel, $l, $output);
+		$retval = 1;
 	    }
 	}
     }
+    return $retval;
 }
 
 
@@ -3099,7 +3110,13 @@ sub pub_msg {
 	do_pubcmd_dbadd($self, $kernel, $channel, $nick, $term, $def);
     } elsif ((priv_and_pub_msg($self, $kernel, $channel, $nick, $msg) == 1) &&
 	     ($msg =~ m/^\s*(\S.+)$/i)) {
-	$self->handle_learndb_trigger($kernel, $channel, $nick, $1);
+	my $trigmsg = $1;
+	if (!($self->handle_learndb_trigger($kernel, $channel, $nick, $trigmsg))) {
+	    $trigmsg = $self->mangle_msg_for_trigger($trigmsg);
+	    $trigmsg = "\$self_".$trigmsg if ($nickmatch);
+	    $self->handle_learndb_trigger($kernel, $channel, $nick, $trigmsg);
+	}
+
     }
 }
 
