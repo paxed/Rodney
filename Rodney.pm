@@ -2825,6 +2825,17 @@ sub can_edit_learndb {
 
 my @sorted_paramrepl_keys;
 my %strvariables_paramrepls;
+my $strvariables_processing; # 0=keep doing until finished. 1=quit, return current result, 2=quit with no result
+
+sub paramstr_stop_process {
+    my $s = shift || "0";
+    if (($s =~ m/^\d+$/) && (int($s) > 0)) {
+	$strvariables_processing = 2;
+    } else {
+	$strvariables_processing = 1;
+    }
+    return "";
+}
 
 sub parse_strvariables_core {
     my $str = shift || "";
@@ -2843,7 +2854,7 @@ sub parse_strvariables_core {
                         my $inner  = get_inner_str($after);
                         my $suffix = substr($after, length($inner)+2);
                         my $middle = &{ $strvariables_paramrepls{$tmp} }(parse_strvariables_core($inner));
-                        $str = $prefix.$middle.$suffix;
+                        $str = $prefix.$middle.(($strvariables_processing == 0) ? $suffix : "");
                         $found = 1;
                         last;
                     }
@@ -2857,7 +2868,7 @@ sub parse_strvariables_core {
                 }
             }
         }
-    } while ($found);
+    } while ($found && ($strvariables_processing == 0));
 
     return $str;
 }
@@ -2936,6 +2947,7 @@ sub parse_strvariables {
 	'$NWIKIPAGES' => \&paramstr_nwikipages,
 	'$WIKIPAGE'   => \&paramstr_wikipage,
 	'$ORDIN'      => \&paramstr_ordin,
+	'$STOP'       => \&paramstr_stop_process,
 	'$NICK'   => $nick,
 	'$CHAN'   => $channel,
 	'$SELF'   => $selfnick,
@@ -2966,7 +2978,11 @@ sub parse_strvariables {
 
     @sorted_paramrepl_keys = sort { length($b) <=> length($a) } keys %strvariables_paramrepls if (!@sorted_paramrepl_keys);
 
+    $strvariables_processing = 0;
+
     $str = parse_strvariables_core($str);
+
+    return "" if ($strvariables_processing == 2);
 
     return paramstr_unescape($str);
 }
