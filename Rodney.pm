@@ -3022,6 +3022,7 @@ sub handle_learndb_trigger {
 	$term = "#*:".$arglist[0];
 	@a = $learn_db->query($term);
     }
+    shift @a if (@a && ($a[0] =~ m/^Redirected to /));
 
     if (@a > 0) {
 
