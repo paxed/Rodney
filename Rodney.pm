@@ -2844,6 +2844,38 @@ sub paramstr_isadmin {
 my @sorted_paramrepl_keys;
 my %strvariables_paramrepls;
 my $strvariables_processing; # 0=keep doing until finished. 1=quit, return current result, 2=quit with no result
+my %strvariables_vars = ();
+
+sub paramstr_setvar {
+    my $s = shift || "";
+    if ($s =~ m/^(.+)\|(.*)$/) {
+       my $varname = $1;
+       my $varvalue = $2 || "";
+       if ($varname =~ m/^(.+)\[(.+)\]$/) {
+	   $varname = $1;
+	   my $varidx = $2;
+	   $strvariables_vars{$varname}->[$varidx] = $varvalue;
+       } else {
+	   $strvariables_vars{$varname} = $varvalue;
+       }
+    }
+    return "";
+}
+
+sub paramstr_getvar {
+    my $s = shift || "";
+    if ($s =~ m/^(.+)\[(.+)\]$/) {
+	$s = $1;
+	my $idx = $2;
+	return $strvariables_vars{$s}->[$idx] if ($strvariables_vars{$s}->[$idx]);
+    } else {
+	return $strvariables_vars{$s} if ($strvariables_vars{$s});
+    }
+    return "";
+}
+
+sub paramstr_clearvars { %strvariables_vars = (); }
+
 
 sub paramstr_stop_process {
     my $s = shift || "0";
@@ -2895,6 +2927,8 @@ sub parse_strvariables {
     my ($self, $channel, $nick, $cmdargs, $string) = @_;
 
     $cmdargs = "" if (!defined $cmdargs);
+
+    $cmdargs =~ s/\s+/ /g;
 
     my @arglist = split(/ /, paramstr_escape(paramstr_trim($cmdargs)));
     shift @arglist;
@@ -2967,6 +3001,9 @@ sub parse_strvariables {
 	'$ORDIN'      => \&paramstr_ordin,
 	'$STOP'       => \&paramstr_stop_process,
 	'$ISADMIN'    => \&paramstr_isadmin,
+	'$SET'        => \&paramstr_setvar,
+	'$GET'        => \&paramstr_getvar,
+	'$'           => \&paramstr_getvar,
 	'$NICK'   => $nick,
 	'$CHAN'   => $channel,
 	'$SELF'   => $selfnick,
@@ -2996,6 +3033,12 @@ sub parse_strvariables {
 	);
 
     @sorted_paramrepl_keys = sort { length($b) <=> length($a) } keys %strvariables_paramrepls if (!@sorted_paramrepl_keys);
+
+    paramstr_clearvars();
+    %strvariables_vars = (
+	'argc' => scalar(@arglist),
+	'argv' => \@arglist
+	);
 
     $strvariables_processing = 0;
 

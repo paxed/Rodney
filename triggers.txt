@@ -101,8 +101,20 @@ $ISWIKIPAGE(...)   Returns 1 if parameter matches a nethackwiki page title.
 $WIKIPAGE(...)	   Return correct capitalization of a nethackwiki page title.
 $NWIKIPAGES(...)   Returns how many nethackwiki page titles match the string.
 
+
 Special commands:
 
 $THEN		   The bot will split the result at this and speak each part separately. (Note that there's a space: "$THEN ")
 $ACT     	   If the definition begins with this, followed by a space, Rodney will ctcp action the message instead of messaging.
+
+
+Variables:
+
+$SET(...)	   Set variable value. Takes two parameters, first is the variable name, second the value.
+$GET(...)	   Get variable value. Takes one parameter, the variable name.
+$(...)		   Alias of $GET(...)
+
+		   Predefined variables:
+		   argc	      Integer. Number of arguments given.
+		   argv	      Array. argv[0] is first argument. For example: "$(argv[0])"
 
