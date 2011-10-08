@@ -2907,6 +2907,7 @@ sub parse_strvariables {
     $cmdargs = "" if (!defined $cmdargs);
 
     my @arglist = split(/ /, paramstr_escape(paramstr_trim($cmdargs)));
+    shift @arglist;
 
     my $argr = $arglist[rand(@arglist)] || $nick;
     my $args = (join ' ', @arglist) || $nick;
