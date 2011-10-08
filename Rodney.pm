@@ -2780,6 +2780,7 @@ sub log_channel_msg_flush {
 
 # paramstr_if("str_a|str_b|do_if_equal|do_if_not_equal")
 # paramstr_if("integer_boolean_value|do_if_non-zero|do_if_zero")
+# paramstr_if("integer_boolean_value|do_if_non-zero")
 sub paramstr_if {
     my $str = shift;
     if ($str =~ m/^(.*)\|(.*)\|(.*)\|(.*)$/) {
@@ -2800,6 +2801,12 @@ sub paramstr_if {
 	    return parse_strvariables_core($do_eq);
 	} else {
 	    return parse_strvariables_core($do_ne);
+	}
+    } elsif ($str =~ m/^(.*)\|(.*)$/) {
+	my $bool = $1;
+	my $do_eq = $2 || "";
+	if (paramstr_isint($bool) && (int $bool)) {
+	    return parse_strvariables_core($do_eq);
 	}
     }
     return "";

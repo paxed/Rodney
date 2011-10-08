@@ -73,7 +73,8 @@ $CHOICE(...)	   Accepts a pipe-delimited list of strings, and returns one of the
 		   Each string can be prepended with "N*" to multiply the weight for that string, eg. "$CHOICE(10*foo|bar)".
 $URLENC(...)	   Encode the parameter for URL usage.
 $ROT13(...)	   Encode the parameter with rot13.
-$IF(...)	   Takes either 3 or 4 parameters, separated by a pipe.
+$IF(...)	   Takes either 2, 3 or 4 parameters, separated by a pipe.
+		   2 parameters: If param1 is non-zero, show param2.
 		   3 parameters: If param1 is non-zero, show param2, else show param3.
 		   4 parameters: If param1 equals param2, shows param3, else shows param4.
 $STOP(...)	   If parameter is 0, stops processing here and returns the already processed part.
