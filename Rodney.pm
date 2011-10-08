@@ -2822,6 +2822,11 @@ sub can_edit_learndb {
     return 1;
 }
 
+sub paramstr_isadmin {
+    my $s = shift || "";
+    return "1" if ($admin_nicks->is_identified($s));
+    return "0";
+}
 
 my @sorted_paramrepl_keys;
 my %strvariables_paramrepls;
@@ -2948,6 +2953,7 @@ sub parse_strvariables {
 	'$WIKIPAGE'   => \&paramstr_wikipage,
 	'$ORDIN'      => \&paramstr_ordin,
 	'$STOP'       => \&paramstr_stop_process,
+	'$ISADMIN'    => \&paramstr_isadmin,
 	'$NICK'   => $nick,
 	'$CHAN'   => $channel,
 	'$SELF'   => $selfnick,
