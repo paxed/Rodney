@@ -2827,18 +2827,18 @@ sub paramstr_if {
 	my $do_eq = $3 || "";
 	my $do_ne = $4 || "";
 	if ($stra eq $strb) {
-	    return parse_strvariables_param($do_eq);
+	    return parse_strvariables_core($do_eq);
 	} else {
-	    return parse_strvariables_param($do_ne);
+	    return parse_strvariables_core($do_ne);
 	}
     } elsif ($str =~ m/^(.*)\|(.*)\|(.*)$/) {
 	my $bool = $1;
 	my $do_eq = $2 || "";
 	my $do_ne = $3 || "";
 	if (paramstr_isint($bool) && (int $bool)) {
-	    return parse_strvariables_param($do_eq);
+	    return parse_strvariables_core($do_eq);
 	} else {
-	    return parse_strvariables_param($do_ne);
+	    return parse_strvariables_core($do_ne);
 	}
     }
     return "";
@@ -2863,12 +2863,78 @@ sub can_edit_learndb {
 
 
 my @sorted_paramrepl_keys;
+my %strvariables_paramrepls;
 
-# parses "$FOO(blah)" variables
-sub parse_strvariables_param {
-    my $str = shift;
+sub parse_strvariables_core {
+    my $str = shift || "";
 
-    my %paramrepls = (
+    my $found;
+
+    do {
+	$found = 0;
+        if ($str =~ m/^(.*?)(\$.*)$/) {
+            my $prefix = $1 || "";
+            my $maybevar = $2 || "";
+            foreach my $tmp (@sorted_paramrepl_keys) {
+                if (ref($strvariables_paramrepls{$tmp}) =~ m/CODE/) {
+                    if ($maybevar =~ m/^\Q$tmp\E(\(.+)$/) { # Functions: $FOO(...)
+                        my $after  = $1 || "";
+                        my $inner  = get_inner_str($after);
+                        my $suffix = substr($after, length($inner)+2);
+                        my $middle = &{ $strvariables_paramrepls{$tmp} }(parse_strvariables_core($inner));
+                        $str = $prefix.$middle.$suffix;
+                        $found = 1;
+                        last;
+                    }
+                } else {
+                    if ($maybevar =~ m/^\Q$tmp\E(.*)$/) { # Constants: $FOO
+                        my $suffix = $1 || "";
+                        $str = $prefix . $strvariables_paramrepls{$tmp} . $suffix;
+                        $found = 1;
+                        last;
+                    }
+                }
+            }
+        }
+    } while ($found);
+
+    return $str;
+}
+
+sub parse_strvariables {
+    my ($self, $channel, $nick, $cmdargs, $string) = @_;
+
+    $cmdargs = "" if (!defined $cmdargs);
+
+    my @arglist = split(/ /, paramstr_escape(paramstr_trim($cmdargs)));
+
+    my $argr = $arglist[rand(@arglist)] || $nick;
+    my $args = (join ' ', @arglist) || $nick;
+    my $rnd_nh_char = random_nh_char();
+    my $rnd_monster = $nh_monsters[rand(@nh_monsters)];
+    my $rnd_object = $nh_objects[rand(@nh_objects)];
+    my $rnd_buc = $nh_BUC[rand(@nh_BUC)];
+    my $rnd_role_s = lc($nh_roles[rand(@nh_roles)]);
+    my $rnd_race_s = lc($nh_races[rand(@nh_races)]);
+    my $rnd_align_s = lc($nh_aligns[rand(@nh_aligns)]);
+    my $rnd_gender_s = lc($nh_genders[rand(@nh_genders)]);
+    my $rnd_role_l = $nh_roles_long[rand(@nh_roles_long)];
+    my $rnd_race_l = $nh_races_long[rand(@nh_races_long)];
+    my $rnd_align_l = $nh_aligns_long[rand(@nh_aligns_long)];
+    my $rnd_gender_l = $nh_genders_long[rand(@nh_genders_long)];
+    my $uptime = sprintf("%d Days, %02d:%02d:%02d", (gmtime(time() - $^T))[ 7, 2, 1, 0 ]);
+    my $serveruptime = sprintf("%d Days, %02d:%02d:%02d", (gmtime((split(/\./, `cat /proc/uptime`))[0]))[ 7, 2, 1, 0 ]);
+    my $zorkmid = ((rand(2) == 0) ? 'heads' : 'tails');
+    my @curr_players = $self->player_list();
+    my $rnd_player = $curr_players[rand(@curr_players)];
+    my $pom_str = get_pom_str();
+    my $curdate = `date`;
+    $curdate =~ s/\n$//;
+
+    my $selfnick = $self->{'Nick'};
+    my $str = $string;
+
+    %strvariables_paramrepls = (
 	'$AN'         => \&an,
 	'$PLURAL'     => \&makeplur,
 	'$NPLURAL'    => \&paramstr_nplural,
@@ -2906,60 +2972,8 @@ sub parse_strvariables_param {
 	'$PLRNAME'    => \&paramstr_playername,
 	'$ISWIKIPAGE' => \&paramstr_iswikipage,
 	'$NWIKIPAGES' => \&paramstr_nwikipages,
-	'$WIKIPAGE'   => \&paramstr_wikipage
-	);
-
-    @sorted_paramrepl_keys = sort { length($b) <=> length($a) } keys %paramrepls if (!@sorted_paramrepl_keys);
-
-    foreach my $tmp (@sorted_paramrepl_keys) {
-	while ($str =~ m/^(.*)\Q$tmp\E(\(.+)$/) {
-         my $prefix = $1 || "";
-	 my $after  = $2 || "";
-	 my $inner  = get_inner_str($after);
-	 my $suffix = substr($after, length($inner)+2); # +2 for parenthesis
-         my $middle = &{ $paramrepls{$tmp} }(parse_strvariables_param($inner));
-         $str = $prefix . ($middle ? $middle : '') . $suffix;
-	}
-    }
-    return $str;
-}
-
-sub parse_strvariables {
-    my ($self, $channel, $nick, $cmdargs, $string) = @_;
-
-    $cmdargs = "" if (!defined $cmdargs);
-
-    my @arglist = split(/ /, paramstr_escape($cmdargs));
-    shift @arglist;
-
-    my $argr = $arglist[rand(@arglist)] || $nick;
-    my $args = (join ' ', @arglist) || $nick;
-    my $rnd_nh_char = random_nh_char();
-    my $rnd_monster = $nh_monsters[rand(@nh_monsters)];
-    my $rnd_object = $nh_objects[rand(@nh_objects)];
-    my $rnd_buc = $nh_BUC[rand(@nh_BUC)];
-    my $rnd_role_s = lc($nh_roles[rand(@nh_roles)]);
-    my $rnd_race_s = lc($nh_races[rand(@nh_races)]);
-    my $rnd_align_s = lc($nh_aligns[rand(@nh_aligns)]);
-    my $rnd_gender_s = lc($nh_genders[rand(@nh_genders)]);
-    my $rnd_role_l = $nh_roles_long[rand(@nh_roles_long)];
-    my $rnd_race_l = $nh_races_long[rand(@nh_races_long)];
-    my $rnd_align_l = $nh_aligns_long[rand(@nh_aligns_long)];
-    my $rnd_gender_l = $nh_genders_long[rand(@nh_genders_long)];
-    my $uptime = sprintf("%d Days, %02d:%02d:%02d", (gmtime(time() - $^T))[ 7, 2, 1, 0 ]);
-    my $serveruptime = sprintf("%d Days, %02d:%02d:%02d", (gmtime((split(/\./, `cat /proc/uptime`))[0]))[ 7, 2, 1, 0 ]);
-    my $zorkmid = ((rand(2) == 0) ? 'heads' : 'tails');
-    my @curr_players = $self->player_list();
-    my $rnd_player = $curr_players[rand(@curr_players)];
-    my $pom_str = get_pom_str();
-    my $curdate = `date`;
-    $curdate =~ s/\n$//;
-
-    my $selfnick = $self->{'Nick'};
-    my $str = $string;
-
-
-    my %simplerepls = (
+	'$WIKIPAGE'   => \&paramstr_wikipage,
+	'$ORDIN'      => \&paramstr_ordin,
 	'$NICK'   => $nick,
 	'$CHAN'   => $channel,
 	'$SELF'   => $selfnick,
@@ -2983,14 +2997,14 @@ sub parse_strvariables {
 	'$PLAYER'  => $rnd_player,
 	'$NPLAYERS' => scalar(@curr_players),
 	'$POM'      => $pom_str,
-	'$DATE'     => $curdate
+	'$DATE'     => $curdate,
+	'$ACT '      => "\x02ACT ",
+	'$THEN '    => "\x02THEN "
 	);
 
-    foreach my $tmp (sort { length($b) <=> length($a) } keys %simplerepls) {
-	$str =~ s/\Q$tmp\E\b/$simplerepls{$tmp}/g;
-    }
+    @sorted_paramrepl_keys = sort { length($b) <=> length($a) } keys %strvariables_paramrepls if (!@sorted_paramrepl_keys);
 
-    $str = parse_strvariables_param($str);
+    $str = parse_strvariables_core($str);
 
     return paramstr_unescape($str);
 }
@@ -3016,9 +3030,9 @@ sub handle_learndb_trigger {
 	$b =~ s/^\S+\[\d+\]: //;
 	$b = $self->parse_strvariables($channel, $nick, $cmdargs, $b);
 
-	foreach my $l (split(/\$THEN /, $b)) {
-	    my $do_me = ($l =~ m/^\$ACT\s/) ? 1 : 0;
-	    $l =~ s/^\$ACT\s//;
+	foreach my $l (split(/\x02THEN\s/, $b)) {
+	    my $do_me = ($l =~ m/^\x02ACT\s/) ? 1 : 0;
+	    $l =~ s/^\x02ACT\s//;
 	    if ($do_me) {
 		$self->botaction($kernel, $l, $output);
 	    } else {

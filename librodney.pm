@@ -184,6 +184,16 @@ sub paramstr_nplural {
     return makeplur($s);
 }
 
+sub paramstr_ordin {
+    my $s = shift || 0;
+    if ($s =~ m/^(\d+)$/) {
+	my $dd = (int($1) % 10);
+	return $s . ((($dd == 0) || ($dd > 3) || ((int($s) % 100) / 10 == 1)) ? "th" :
+            ($dd == 1) ? "st" : ($dd == 2) ? "nd" : "rd");
+    }
+    return $s."th";
+}
+
 # paramstr_trim(" a ") -> "a"
 sub paramstr_trim {
     my $s = shift || "";
