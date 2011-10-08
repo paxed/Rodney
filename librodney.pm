@@ -7,26 +7,7 @@ use Math::Expression::Evaluator;
 use Try::Tiny;
 use POSIX qw( strftime );
 
-
-my @nh_roles = ('Arc', 'Bar', 'Cav', 'Hea', 'Kni', 'Mon', 'Pri', 'Rog', 'Ran', 'Sam', 'Tou', 'Val', 'Wiz');
-my @nh_races = ('Hum', 'Elf', 'Dwa', 'Orc', 'Gno');
-my @nh_aligns = ('Law', 'Neu', 'Cha');
-my @nh_genders = ('Mal', 'Fem');
-
-my %nh_dnums = (
-    0 => "Dungeons",
-    1 => "Gehennom",
-    2 => "Mines",
-    3 => "Quest",
-    4 => "Soko",
-    5 => "Ludios",
-    6 => "Vlad",
-    7 => "Planes",
-    -5 => "Astral",
-    -4 => "Water",
-    -3 => "Fire",
-    -2 => "Air",
-    -1 => "Earth");
+do "nhconst.pm";
 
 
 # decode_xlog_datastr("conduct", "0x102")
@@ -68,7 +49,7 @@ sub decode_xlog_datastr {
 	$ret = sprintf("%04d%02d%02d %02d:%02d:%02d", ($year+1900), ($mon+1), $mday, $hour,$min,$sec);
     } elsif (($a =~ m/deathdnum/) || ($a =~ m/deathlev/)) {
 	$ret = $b;
-	$ret = $nh_dnums{$b} if (($b < 0) || ($a =~ m/deathdnum/));
+	$ret = $nhconst::dnums{$b} if (($b < 0) || ($a =~ m/deathdnum/));
     } else {
 	$ret = $b;
     }
@@ -1057,7 +1038,7 @@ sub random_nh_char {
     my @aligns;
     my ($role, $race, $gender, $align);
 
-    $role = paramstr_trim(shift) || $nh_roles[rand @nh_roles];
+    $role = paramstr_trim(shift) || $nhconst::roles[rand @nhconst::roles];
 
     $role = substr($role,0,3) if (length($role) > 3);
 

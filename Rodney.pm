@@ -39,6 +39,7 @@ require Exporter;
 $VERSION = '0.04';
 
 
+do "nhconst.pm";
 do "librodney.pm";
 do "learndb.pm";
 do "seendbi.pm";
@@ -47,46 +48,6 @@ do "messages.pm";
 do "nickidlist.pm";
 
 
-my @nh_roles = ('Arc', 'Bar', 'Cav', 'Hea', 'Kni', 'Mon', 'Pri', 'Rog', 'Ran', 'Sam', 'Tou', 'Val', 'Wiz');
-my @nh_races = ('Hum', 'Elf', 'Dwa', 'Orc', 'Gno');
-my @nh_aligns = ('Law', 'Neu', 'Cha');
-my @nh_genders = ('Mal', 'Fem');
-my @nh_BUC = ('blessed', 'uncursed', 'cursed');
-
-my @nh_roles_long = ('archeologist', 'barbarian', 'caveman', 'healer', 'knight', 'monk', 'priest', 'rogue', 'ranger', 'samurai', 'tourist', 'valkyrie', 'wizard');
-my @nh_races_long = ('human', 'elf', 'dwarf', 'orc', 'gnome');
-my @nh_aligns_long = ('lawful', 'neutral', 'chaotic');
-my @nh_genders_long = ('male', 'female');
-
-my %nh_dnums = (
-    0 => "Dungeons",
-    1 => "Gehennom",
-    2 => "Mines",
-    3 => "Quest",
-    4 => "Soko",
-    5 => "Ludios",
-    6 => "Vlad",
-    7 => "Planes",
-    -5 => "Astral",
-    -4 => "Water",
-    -3 => "Fire",
-    -2 => "Air",
-    -1 => "Earth");
-
-my %nh_short_dnums = (
-    0 => "Dng",
-    1 => "Geh",
-    2 => "Min",
-    3 => "Que",
-    4 => "Sok",
-    5 => "Lud",
-    6 => "Vld",
-    7 => "Planes",
-    -5 => "Astral",
-    -4 => "Water",
-    -3 => "Fire",
-    -2 => "Air",
-    -1 => "Earth");
 
 
 # stuff ignored by the bot. "hostmask regex" -form.
@@ -711,7 +672,7 @@ sub mangle_sql_query {
 			    }
 			    $groupby = $d;
 			    if ($d eq "role") {
-				$sqllimit = scalar @nh_roles;
+				$sqllimit = scalar @nhconst::roles;
 			    } else {
 				$sqllimit = "10";
 			    }
@@ -811,13 +772,13 @@ sub mangle_sql_query {
 			$tmp_oper = "!=";
 			$tmpd = ucfirst(substr($tmpd, 1));
 		    }
-		    if ( grep { $_ eq $tmpd } @nh_roles ) {
+		    if ( grep { $_ eq $tmpd } @nhconst::roles ) {
 			push(@wheres, "role".$tmp_oper.$dbh->quote($tmpd));
-		    } elsif ( grep { $_ eq $tmpd } @nh_races ) {
+		    } elsif ( grep { $_ eq $tmpd } @nhconst::races ) {
 			push(@wheres, "race".$tmp_oper.$dbh->quote($tmpd));
-		    } elsif ( grep { $_ eq $tmpd } @nh_aligns ) {
+		    } elsif ( grep { $_ eq $tmpd } @nhconst::aligns ) {
 			push(@wheres, "align".$tmp_oper.$dbh->quote($tmpd));
-		    } elsif ( grep { $_ eq $tmpd } @nh_genders ) {
+		    } elsif ( grep { $_ eq $tmpd } @nhconst::genders ) {
 			push(@wheres, "gender".$tmp_oper.$dbh->quote($tmpd));
 		    } elsif ($aggr{aggregate}) {
 			my $tmpf = $aggr{field};
@@ -1111,13 +1072,13 @@ sub whereis_players {
 	$whisd->{'score'} = int($whisd->{'score'});
 	$whisd->{'amulet'} = int($whisd->{'amulet'});
 
-	$whisd->{'dungeon'} = $nh_dnums{$whisd->{'dnum'}};
-	$whisd->{'sdungeon'} = $nh_short_dnums{$whisd->{'dnum'}};
+	$whisd->{'dungeon'} = $nhconst::dnums{$whisd->{'dnum'}};
+	$whisd->{'sdungeon'} = $nhconst::dnums_short{$whisd->{'dnum'}};
 
-	$whisd->{'depthname'} = (($whisd->{'depth'} < 0) ? $nh_dnums{$whisd->{'depth'}} : $whisd->{'depth'});
+	$whisd->{'depthname'} = (($whisd->{'depth'} < 0) ? $nhconst::dnums{$whisd->{'depth'}} : $whisd->{'depth'});
 
 	push @data, $whisd;
-	
+
     }
 
     return "" if (scalar(@data) < 1);
@@ -2525,15 +2486,15 @@ sub priv_and_pub_msg {
 	} else {
 	    @arg = split(/ /, $param);
 	}
-	if ($arg[0] =~ /\@roles?/i) { $retval = $nh_roles[rand @nh_roles]; }
-	elsif ($arg[0] =~ /\@races?/i) { $retval = $nh_races[rand @nh_races]; }
-	elsif ($arg[0] =~ /\@genders?/i || $arg[0] =~ /\@sex(es)?/i) { $retval = $nh_genders[rand @nh_genders]; }
+	if ($arg[0] =~ /\@roles?/i) { $retval = $nhconst::roles[rand @nhconst::roles]; }
+	elsif ($arg[0] =~ /\@races?/i) { $retval = $nhconst::races[rand @nhconst::races]; }
+	elsif ($arg[0] =~ /\@genders?/i || $arg[0] =~ /\@sex(es)?/i) { $retval = $nhconst::genders[rand @nhconst::genders]; }
 	elsif ($arg[0] =~ /\@char/i) { $retval = random_nh_char(); }
 	elsif ($arg[0] =~ /\@coin/i || $arg[0] =~ /\@zorkmid/i) { @arg = ('heads','tails');	}
 	elsif ($arg[0] =~ /\@players?/i) { @arg = $self->player_list(); }
-	elsif ($arg[0] =~ /\@align(ment)?s?/i) { $retval = $nh_aligns[rand @nh_aligns]; }
+	elsif ($arg[0] =~ /\@align(ment)?s?/i) { $retval = $nhconst::aligns[rand @nhconst::aligns]; }
 	else {
-	    foreach my $role (@nh_roles) {
+	    foreach my $role (@nhconst::roles) {
 		$retval = random_nh_char($role) if $arg[0] =~ /^\@$role$/i;
 	    }
 	}
@@ -2914,15 +2875,15 @@ sub parse_strvariables {
     my $rnd_nh_char = random_nh_char();
     my $rnd_monster = $nh_monsters[rand(@nh_monsters)];
     my $rnd_object = $nh_objects[rand(@nh_objects)];
-    my $rnd_buc = $nh_BUC[rand(@nh_BUC)];
-    my $rnd_role_s = lc($nh_roles[rand(@nh_roles)]);
-    my $rnd_race_s = lc($nh_races[rand(@nh_races)]);
-    my $rnd_align_s = lc($nh_aligns[rand(@nh_aligns)]);
-    my $rnd_gender_s = lc($nh_genders[rand(@nh_genders)]);
-    my $rnd_role_l = $nh_roles_long[rand(@nh_roles_long)];
-    my $rnd_race_l = $nh_races_long[rand(@nh_races_long)];
-    my $rnd_align_l = $nh_aligns_long[rand(@nh_aligns_long)];
-    my $rnd_gender_l = $nh_genders_long[rand(@nh_genders_long)];
+    my $rnd_buc = $nhconst::BUC[rand(@nhconst::BUC)];
+    my $rnd_role_s = lc($nhconst::roles[rand(@nhconst::roles)]);
+    my $rnd_race_s = lc($nhconst::races[rand(@nhconst::races)]);
+    my $rnd_align_s = lc($nhconst::aligns[rand(@nhconst::aligns)]);
+    my $rnd_gender_s = lc($nhconst::genders[rand(@nhconst::genders)]);
+    my $rnd_role_l = $nhconst::roles_long[rand(@nhconst::roles_long)];
+    my $rnd_race_l = $nhconst::races_long[rand(@nhconst::races_long)];
+    my $rnd_align_l = $nhconst::aligns_long[rand(@nhconst::aligns_long)];
+    my $rnd_gender_l = $nhconst::genders_long[rand(@nhconst::genders_long)];
     my $uptime = sprintf("%d Days, %02d:%02d:%02d", (gmtime(time() - $^T))[ 7, 2, 1, 0 ]);
     my $serveruptime = sprintf("%d Days, %02d:%02d:%02d", (gmtime((split(/\./, `cat /proc/uptime`))[0]))[ 7, 2, 1, 0 ]);
     my $zorkmid = ((rand(2) == 0) ? 'heads' : 'tails');
