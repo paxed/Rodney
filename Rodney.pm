@@ -81,12 +81,17 @@ use constant DATAGRAM_MAXLEN => 1024;
 
 sub db_connect {
     my ($self) = @_;
-    $dbh = DBI->connect("dbi:".$xlogfiledb->{dbtype}.":".$xlogfiledb->{db}.":localhost",$xlogfiledb->{user},$xlogfiledb->{pass},{AutoCommit => 1, PrintError => 1});
+    if (!($dbh = DBI->connect("dbi:".$xlogfiledb->{dbtype}.":".$xlogfiledb->{db}.":localhost",$xlogfiledb->{user},$xlogfiledb->{pass},{AutoCommit => 1, PrintError => 1}))) {
+	print "Cannot connect to xlogfile db.\n";
+	undef $dbh;
+    }
 }
 
 sub db_disconnect {
+    if ($dbh) {
 	$dbh->commit();
 	$dbh->disconnect();
+    }
 }
 
 sub player_logfile {
@@ -94,6 +99,8 @@ sub player_logfile {
     db_connect($self);
 
     my @lines;
+
+    return ("Xlogfile db disabled.") if (!$dbh);
 
     my $sth = $dbh->prepare("SELECT * FROM xlogfile WHERE name like ".$dbh->quote($regex));
     $sth->execute();
@@ -285,6 +292,8 @@ sub shorten_url {
 	my $id = $dbh->{'mysql_insertid'};
 	$dbh->disconnect();
 	$url = 'http://url.alt.org/?'.$id;
+    } else {
+	print "Url shortening db error.\n" if (!$dbh);
     }
 
     return $url;
@@ -327,7 +336,7 @@ sub mangle_sql_query {
 		  "align0"
 	);
 
-    my @all_param_fields = (@fields, "max", "min", "g", "gmax", "gmin", "hide", "skip", "limit");
+    my @all_param_fields = (@fields, "max", "min" ,"sort", "g", "group", "gmax", "gmin", "hide", "skip", "limit");
 
     my %field_renames = (
 	original_gender => "gender0",
@@ -343,16 +352,23 @@ sub mangle_sql_query {
 	oalign => "align0",
 	achievement => "achieve",
 	achievements => "achieve",
+	achieved => "achieve",
 	class => "role",
 	deathdungeon => "deathdnum",
+	deathbranch => "deathdnum",
 	dungeon => "deathdnum",
+	dungeonbranch => "deathdnum",
 	dungeonnum => "deathdnum",
 	dnum => "deathdnum",
 	deathlvl => "deathlev",
+	deathlevel => "deathlev",
+	deathlevnum => "deathlev",
 	dlvl => "deathlev",
 	dlev => "deathlev",
 	lev => "deathlev",
 	dlevel => "deathlev",
+	dlevelnum => "deathlev",
+	dlevelnumber => "deathlev",
 	lvl => "deathlev",
 	maxlev => "maxlvl",
 	maxlevel => "maxlvl",
@@ -362,6 +378,7 @@ sub mangle_sql_query {
 	enddate => "deathdate",
 	started => "starttime",
 	ended => "endtime",
+	end => "endtime",
 	startime => "starttime",
 	killer => "death",
 	numdeaths => "deaths",
@@ -369,16 +386,20 @@ sub mangle_sql_query {
 	conducts => "conduct",
 	numconducts => "nconducts",
 	num_conducts => "nconducts",
+	nconduct => "nconducts",
 	numachieves => "nachieves",
 	num_achieves => "nachieves",
 	nachievements => "nachieves",
 	numachievements => "nachieves",
 	num_achievements => "nachieves",
-	gametime => "turns"
+	nachieve => "nachieves",
+	gametime => "turns",
+	rounds => "turns"
 	);
 
     my %param_subst = (
         "won" => "death=ascended",
+        "!won" => "death!=ascended*",
 	"ascended" => "death=ascended",
 	"quit" => "death=quit",
 	"escaped" => "death=escaped",
@@ -538,9 +559,9 @@ sub mangle_sql_query {
 		} elsif ($f eq "deathyear" || $f eq "birthyear") {
 		    if ($d =~ m/^\d\d\d\d$/) {
 			if ($f eq "deathyear") {
-			    push(@wheres, "substr(deathdate,1,4)".$o.$dbh->quote($d));
+			    push(@wheres, "substr(deathdate,1,4)".$o.$dbh->quote($d)) if ($dbh);
 			} else {
-			    push(@wheres, "substr(birthdate,1,4)".$o.$dbh->quote($d));
+			    push(@wheres, "substr(birthdate,1,4)".$o.$dbh->quote($d)) if ($dbh);
 			}
 		    } else {
 			$errorstr = "'".$d."' is not a valid year";
@@ -548,9 +569,9 @@ sub mangle_sql_query {
 		} elsif ($f eq "deathmonth" || $f eq "birthmonth") {
 		    if (($d =~ m/^\d\d$/) && ($d > 0) && ($d < 13)) {
 			if ($f eq "deathmonth") {
-			    push(@wheres, "substr(deathdate,5,2)".$o.$dbh->quote($d));
+			    push(@wheres, "substr(deathdate,5,2)".$o.$dbh->quote($d)) if ($dbh);
 			} else {
-			    push(@wheres, "substr(birthdate,5,2)".$o.$dbh->quote($d));
+			    push(@wheres, "substr(birthdate,5,2)".$o.$dbh->quote($d)) if ($dbh);
 			}
 		    } else {
 			$errorstr = "'".$d."' is not a valid month";
@@ -558,9 +579,9 @@ sub mangle_sql_query {
 		} elsif ($f eq "deathday" || $f eq "birthday") {
 		    if (($d =~ m/^\d\d$/) && ($d > 0) && ($d < 32)) {
 			if ($f eq "deathday") {
-			    push(@wheres, "substr(deathdate,7,2)".$o.$dbh->quote($d));
+			    push(@wheres, "substr(deathdate,7,2)".$o.$dbh->quote($d)) if ($dbh);
 			} else {
-			    push(@wheres, "substr(birthdate,7,2)".$o.$dbh->quote($d));
+			    push(@wheres, "substr(birthdate,7,2)".$o.$dbh->quote($d)) if ($dbh);
 			}
 		    } else {
 			$errorstr = "'".$d."' is not a valid day of month";
@@ -571,9 +592,9 @@ sub mangle_sql_query {
 		    if ($d =~ m/^-?\d+/) {
 			if ($d < 0) {
 			    #push(@wheres, "deathdlev='".$deathdlev_conv{"planes"}."'");
-			    push(@wheres, "deathlev".$o."".$dbh->quote($d)."");
+			    push(@wheres, "deathlev".$o."".$dbh->quote($d)."") if ($dbh);
 			} else {
-			    push(@wheres, $f.$o."".$dbh->quote($d)."");
+			    push(@wheres, $f.$o."".$dbh->quote($d)."") if ($dbh);
 			}
 		    } else {
 			$errorstr = "'".$f."' requires a number or a dungeon name";
@@ -584,9 +605,9 @@ sub mangle_sql_query {
 		    if ($d =~ m/^-?\d+/) {
 			if ($d < 0) {
 			    #push(@wheres, "deathdlev='".$deathdlev_conv{"planes"}."'");
-			    push(@wheres, "deathlev".$o."".$dbh->quote($d)."");
+			    push(@wheres, "deathlev".$o."".$dbh->quote($d)."") if ($dbh);
 			} else {
-			    push(@wheres, $f.$o."".$dbh->quote($d)."");
+			    push(@wheres, $f.$o."".$dbh->quote($d)."") if ($dbh);
 			}
 		    } else {
 			$errorstr = "'".$f."' requires a level number (or a plane)";
@@ -646,7 +667,7 @@ sub mangle_sql_query {
 		    } else {
 			$errorstr = "'".$f."' accepts only '='.";
 		    }
-		} elsif ($f eq "g" || $f eq "gmax" || $f eq "gmin") {
+		} elsif ($f eq "g" || $f eq "gmax" || $f eq "gmin" || $f eq "group") {
 
 		    if ($groupby) {
 			$errorstr = "only one '".$f."' allowed.";
@@ -682,7 +703,7 @@ sub mangle_sql_query {
 		    } else {
 			$errorstr = "'".$f."' accepts only '=' as comparison.";
 		    }
-		} elsif (($f eq "max" || $f eq "min")) {
+		} elsif (($f eq "max" || $f eq "min" || $f eq "sort")) {
 
 		    #if ($groupby) {
 		    #	$errorstr = "grouping and '".$f."' together not allowed.";
@@ -695,7 +716,7 @@ sub mangle_sql_query {
 			if ( grep { $_ eq $d } @fields ) {
 			    my $tmps = $d." ";
 			    push(@getfields, $d);
-			    $tmps .= "desc" if ($f eq "max");
+			    $tmps .= "desc" if ($f eq "max" || $f eq "sort");
 			    $tmps .= "asc" if ($f eq "min");
 			    push(@sqlsort, $tmps);
 			    $sqllimit = "10";
@@ -709,7 +730,7 @@ sub mangle_sql_query {
 		    my @fsel;
 		    my @tmpr = split("\\|", $d);
 		    foreach my $tmpz (@tmpr) {
-			push(@fsel, $f." LIKE ".$dbh->quote($tmpz)."");
+			push(@fsel, $f." LIKE ".$dbh->quote($tmpz)."") if ($dbh);
 		    }
 		    $nofields += 1 if ($f eq "name");
 		    push(@wheres, "(".join(" or ", @fsel).")");
@@ -727,17 +748,15 @@ sub mangle_sql_query {
 			$d = substr(ucfirst(lc($d)),0,3);
 		    } elsif (($f eq "birthdate") || ($f eq "deathdate")) {
 			$d = lc($d);
-			if ($d eq "today") {
-			    my ($tmpy, $tmpm, $tmpd) = (localtime( time() ) )[ 5, 4, 3 ];
-			    $d = sprintf("%.04d%.02d%.02d", ($tmpy+1900), ($tmpm+1), $tmpd);
-			} elsif ($d =~ m/(20[0-1][0-9])([01][0-9])([0123][0-9])/) {
-			    # nothing here
+			my %tmpdate = str_to_yyyymmdd($d);
+			if ($tmpdate{'error'}) {
+			    $errorstr = "'".$f."': ".$tmpdate{'error'};
 			} else {
-			    $errorstr = "'".$f."': unknown date '".$d."'";
+			    $d = $tmpdate{'date'};
 			}
 		    } elsif (($f eq "starttime") || ($f eq "endtime")) {
 			$d = lc($d);
-			if ($d eq "today") {
+			if ($d eq "today" || $d eq "now") {
 			    $d = time();
 			} elsif ($d =~ m/(20[0-1][0-9])([01][0-9])([0123][0-9])/) {
 			    # TODO, convert to unix timestamp
@@ -747,7 +766,7 @@ sub mangle_sql_query {
 		    }
 
 		    $nofields += 1 if ($f eq "name");
-		    push(@wheres, $f.$o."".$dbh->quote($d)."");
+		    push(@wheres, $f.$o."".$dbh->quote($d)."") if ($dbh);
 		}
 	    } else {
 		my @all_unknown_fields = (@all_param_fields, keys(%field_renames));
@@ -773,13 +792,13 @@ sub mangle_sql_query {
 			$tmpd = ucfirst(substr($tmpd, 1));
 		    }
 		    if ( grep { $_ eq $tmpd } @nhconst::roles ) {
-			push(@wheres, "role".$tmp_oper.$dbh->quote($tmpd));
+			push(@wheres, "role".$tmp_oper.$dbh->quote($tmpd)) if ($dbh);
 		    } elsif ( grep { $_ eq $tmpd } @nhconst::races ) {
-			push(@wheres, "race".$tmp_oper.$dbh->quote($tmpd));
+			push(@wheres, "race".$tmp_oper.$dbh->quote($tmpd)) if ($dbh);
 		    } elsif ( grep { $_ eq $tmpd } @nhconst::aligns ) {
-			push(@wheres, "align".$tmp_oper.$dbh->quote($tmpd));
+			push(@wheres, "align".$tmp_oper.$dbh->quote($tmpd)) if ($dbh);
 		    } elsif ( grep { $_ eq $tmpd } @nhconst::genders ) {
-			push(@wheres, "gender".$tmp_oper.$dbh->quote($tmpd));
+			push(@wheres, "gender".$tmp_oper.$dbh->quote($tmpd)) if ($dbh);
 		    } elsif ($aggr{aggregate}) {
 			my $tmpf = $aggr{field};
 			$tmpf = $field_renames{$tmpf} if ( grep { $_ eq $tmpf } keys(%field_renames) );
@@ -817,7 +836,7 @@ sub mangle_sql_query {
     }
 
     if ($nofields >= 1) {
-	push(@wheres, "lower(name)".$plrname_oper.$dbh->quote(lc($plrname))) if ($plrname);
+	push(@wheres, "lower(name)".$plrname_oper.$dbh->quote(lc($plrname))) if ($plrname && $dbh);
     }
 
     if (!@sqlsort && ($has_aggregates == 0)) {
@@ -1169,6 +1188,7 @@ sub log_data {
     $nick =~ tr/A-Z/a-z/;
 
     db_connect($self);
+    return "Xlogfile db disabled." if (!$dbh);
     my $sth = $dbh->prepare("SELECT name,birthdate,deathdate,death,points,deaths FROM xlogfile WHERE "
 	."name like ".$dbh->quote($nick));
     $sth->execute();
@@ -1232,6 +1252,7 @@ sub asc_data {
     $nick =~ tr/A-Z/a-z/;
 
     db_connect($self);
+    return "Xlogfile db disabled." if (!$dbh);
     my $sth = $dbh->prepare("SELECT name,death,role,race,gender,align FROM xlogfile WHERE "
 	."name like ".$dbh->quote($nick));
     $sth->execute();
@@ -1474,6 +1495,7 @@ sub highscore_query_nick {
     if (!@return) # no high score for $player
     {
 	db_connect($self);
+	return ("Xlogfile db disabled.") if (!$dbh);
 	my $sth = $dbh->prepare("SELECT max(points) FROM xlogfile WHERE name=".$dbh->quote($player));
 	$sth->execute();
 	my ($high) = $sth->fetchrow_array();
@@ -1829,6 +1851,7 @@ sub paramstr_sqlquery_xlogfile {
     my $query = shift || "";
 
     db_connect();
+    return "Xlogfile db disabled." if (!$dbh);
     my %dat = mangle_sql_query($query, undef, undef, 1);
 
     if ($dat{"error"}) {
@@ -1920,6 +1943,7 @@ sub do_sqlquery_xlogfile {
     } else {
 	my $str = "";
 	my $dbdata;
+	return ("Xlogfile db disabled.") if (!$dbh);
 	my $sth = $dbh->prepare($dat{"sql"});
 
 	if ($dbh->err()) { push(@ret, "$DBI::errstr"); last; }
@@ -2273,6 +2297,10 @@ sub do_pubcmd_streak {
     my $cancontlong = 0;
 
     db_connect($self);
+    if (!$dbh) {
+	$self->botspeak($kernel, "Xlogfile db disabled", $channel);
+	return;
+    }
     my $sth = $dbh->prepare("SELECT birthdate,deathdate,death FROM xlogfile WHERE name LIKE ".$dbh->quote($nick));
     $sth->execute();
 

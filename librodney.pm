@@ -342,9 +342,15 @@ sub is_aggregate_func {
 
     my @aggregates = ("avg", "count", "max", "min", "sum");
 
+    my %aggr_renames = (
+	average => "avg",
+	av => "avg"
+	);
+
     my ($a, $f) = $str =~ /^([a-z]+)\(([^)]+)\)$/;
 
     if ((defined $a) && (defined $f)) {
+	$a = $aggr_renames{$a} if ( grep { $_ eq $a } keys(%aggr_renames) );
 	if (grep {$_ eq $a} @aggregates) {
 	    my %ret = (aggregate => $a, field => $f);
 	    return %ret;
@@ -827,6 +833,57 @@ sub conv_hms {
     return $secs + (60 * $mins) + (60 * 60 * $hours) + (24 * 60 * 60 * $days);
 }
 
+# %tmpdate = str_to_yyyymmdd("2011.11.04")
+sub str_to_yyyymmdd {
+    my $s = shift || "";
+    my $err;
+    my ($tmpy, $tmpm, $tmpd);
+    if ($s eq "today" || $s eq "now") {
+	($tmpy, $tmpm, $tmpd) = (localtime( time() ) )[ 5, 4, 3 ];
+	$s = sprintf("%.04d%.02d%.02d", ($tmpy+1900), ($tmpm+1), $tmpd);
+    } elsif ($s eq "yesterday") {
+	($tmpy, $tmpm, $tmpd) = (localtime( time()-(24*60*60) ) )[ 5, 4, 3 ];
+	$s = sprintf("%.04d%.02d%.02d", ($tmpy+1900), ($tmpm+1), $tmpd);
+    } elsif ($s =~ m/^(now|today)?-(\d+)days?$/) {
+	($tmpy, $tmpm, $tmpd) = (localtime( time()-($2 * 24*60*60) ) )[ 5, 4, 3 ];
+	$s = sprintf("%.04d%.02d%.02d", ($tmpy+1900), ($tmpm+1), $tmpd);
+    } elsif ($s =~ m/(20[0-1][0-9])([01][0-9])([0123][0-9])/) {
+	# no need to change
+    } elsif ($s =~ m/(20[0-1][0-9]).([01][0-9]).([0123][0-9])/) {
+	$s = $1.$2.$3;
+    } elsif ($s =~ m/([0-9]+).([0-9]+).([0-9]+)/) {
+	my $d1 = $1;
+	my $d2 = $2;
+	my $d3 = $3;
+	my $year = -1;
+	my $mon = -1;
+	my $day = -1;
+	if ($d1 > 1900) { $year = $d1; $d1 = -1; }
+	if ($d3 > 1900) { $year = $d3; $d3 = -1; }
+
+	if ($d1 > 12) { $day = $d2; $d2 = -1; $mon = $d1; $d1 = -1; }
+	if ($d3 > 12) { $day = $d3; $d3 = -1; $mon = $d2; $d2 = -1; }
+	if ($d2 > 12) {
+	    $day = $d2; $d2 = -1;
+	    if ($d1 > 0) {
+		$mon = $d1; $d1 = -1;
+	    } elsif ($d3 > 0) {
+		$mon = $d3; $d3 = -1;
+	    }
+	}
+
+	if ($year == -1 || $mon == -1 || $day == -1 ||
+	    $d1 != -1 || $d2 != -1 || $d3 != -1) {
+	    $err = "ambiguous date '".$s."'";
+	} else {
+	    $s = $year.$mon.$day;
+	}
+    } else {
+	$err = "unknown date '".$s."'";
+    }
+    return ("date" => $s, "error" => $err) if ($err);
+    return ("date" => $s);
+}
 
 
 # @lines = splitline($longline, $length);
