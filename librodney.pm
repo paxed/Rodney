@@ -833,6 +833,33 @@ sub conv_hms {
     return $secs + (60 * $mins) + (60 * 60 * $hours) + (24 * 60 * 60 * $days);
 }
 
+# cnv_str_to_bitmask("FooVgnVgtWeaPsf", \%conduct_names);
+sub cnv_str_to_bitmask {
+    my $str = lc(shift);
+    my $hashref = shift;
+    my $mask = 0x0000;
+    my $err;
+
+    my @hashkeys = sort {length($b) <=> length($a)} keys(%{$hashref});
+
+    return $mask if (!@hashkeys);
+
+    do {
+	$err = 1;
+	foreach my $tmp (@hashkeys) {
+	    if ($str =~ m/^\Q$tmp\E/) {
+		$mask |= $hashref->{$tmp};
+		$str =~ s/^\Q$tmp\E//;
+		$err = 0;
+		last;
+	    }
+	}
+    } while (!$err && ($str ne ""));
+    return -1 if ($err);
+    return $mask;
+}
+
+
 # %tmpdate = str_to_yyyymmdd("2011.11.04")
 sub str_to_yyyymmdd {
     my $s = shift || "";

@@ -429,18 +429,20 @@ sub mangle_sql_query {
 
 
     my %conduct_names = (
-        foodless => 0x0001,     food    => 0x0001,
-        vegan => 0x0002,
-        vegetarian => 0x0004,
-        atheist => 0x0008,      godless => 0x0008,
-        weaponless => 0x0010,   weapon  => 0x0010,
+	none => 0x0000,         nothing => 0x0000,
+        foodless => 0x0001,     food    => 0x0001,   foo => 0x0001,
+        vegan => 0x0002,        veg     => 0x0002,   vgn => 0x0002,
+        vegetarian => 0x0004,   vgt     => 0x0004,
+        atheist => 0x0008,      godless => 0x0008,   ath => 0x0008,
+        weaponless => 0x0010,   weapon  => 0x0010,   wea => 0x0010, wpn => 0x0010,
         pacifist => 0x0020,     paci    => 0x0020,   pac => 0x0020,
         illiterate => 0x0040,   illit   => 0x0040,   ill => 0x0040,
-        polypiles => 0x0080,
-        polyself => 0x0100,
-        wishing => 0x0200,      wish    => 0x0200,   wishless => 0x0200,
-        artiwishing => 0x0400,  arti    => 0x0400,
-        genocide => 0x0800,     geno    => 0x0800);
+        polypiles => 0x0080,    polypileless => 0x0080, ppl => 0x0080,
+        polyself => 0x0100,     polyselfless => 0x0100, psf => 0x0100,
+	polymorph => 0x0180,
+        wishing => 0x0200,      wish    => 0x0200,   wishless => 0x0200, wis => 0x0200,
+        artiwishing => 0x0400,  arti    => 0x0400,   artiwishless => 0x0400, art => 0x0400,
+        genocide => 0x0800,     geno    => 0x0800,   gen => 0x0800);
 
     my %achieve_names = (
 	get_bell            => 0x0001, bell            => 0x0001,
@@ -545,8 +547,13 @@ sub mangle_sql_query {
 			if ($conduct_names{lc($tmpz)}) {
 			    $fsel = $fsel | $conduct_names{lc($tmpz)};
 			} else {
-			    $errorstr = "unknown conduct string '".$tmpz."'".perhaps_you_meant($tmpz, keys %conduct_names);
-			    last;
+			    my $tmpmask = cnv_str_to_bitmask($tmpz, \%conduct_names);
+			    if ($tmpmask == -1) {
+				$errorstr = "unknown conduct string '".$tmpz."'".perhaps_you_meant($tmpz, keys %conduct_names);
+				last;
+			    } else {
+				$fsel |= $tmpmask;
+			    }
 			}
 		    }
 		    if ($o eq "=") {
@@ -619,8 +626,13 @@ sub mangle_sql_query {
 			if ($achieve_names{lc($tmpz)}) {
 			    $fsel = $fsel | $achieve_names{lc($tmpz)};
 			} else {
-			    $errorstr = "unknown achievement '".$tmpz."'".perhaps_you_meant($tmpz, keys %achieve_names);
-			    last;
+			    my $tmpmask = cnv_str_to_bitmask($tmpz, \%conduct_names);
+			    if ($tmpmask == -1) {
+				$errorstr = "unknown achievement '".$tmpz."'".perhaps_you_meant($tmpz, keys %achieve_names);
+				last;
+			    } else {
+				$fsel |= $tmpmask;
+			    }
 			}
 		    }
 		    if ($o eq "=") {
