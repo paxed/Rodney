@@ -397,7 +397,9 @@ sub mangle_sql_query {
 	nachieve => "nachieves",
 	gametime => "turns",
 	rounds => "turns",
-	turn => "turns"
+	turn => "turns",
+	playername => "name",
+	player => "name"
 	);
 
     my %param_subst = (
