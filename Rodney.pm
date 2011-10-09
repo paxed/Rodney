@@ -385,16 +385,19 @@ sub mangle_sql_query {
 	num_deaths => "deaths",
 	conducts => "conduct",
 	numconducts => "nconducts",
+	numconduct => "nconducts",
 	num_conducts => "nconducts",
 	nconduct => "nconducts",
 	numachieves => "nachieves",
+	numachieve => "nachieves",
 	num_achieves => "nachieves",
 	nachievements => "nachieves",
 	numachievements => "nachieves",
 	num_achievements => "nachieves",
 	nachieve => "nachieves",
 	gametime => "turns",
-	rounds => "turns"
+	rounds => "turns",
+	turn => "turns"
 	);
 
     my %param_subst = (
