@@ -2933,6 +2933,14 @@ sub paramstr_stop_process {
     return "";
 }
 
+sub paramstr_maybestop {
+    my $s = paramstr_trim(shift) || "0";
+    if (($s =~ m/^\d+$/) && (int($s) > 0)) {
+	$strvariables_processing = 2 if (int(rand(int($s))));
+    }
+    return "";
+}
+
 sub parse_strvariables_core {
     my $str = shift || "";
 
@@ -3046,6 +3054,7 @@ sub parse_strvariables {
 	'$WIKIPAGE'   => \&paramstr_wikipage,
 	'$ORDIN'      => \&paramstr_ordin,
 	'$STOP'       => \&paramstr_stop_process,
+	'$QUIT'       => \&paramstr_maybestop,
 	'$ISADMIN'    => \&paramstr_isadmin,
 	'$SET'        => \&paramstr_setvar,
 	'$GET'        => \&paramstr_getvar,
