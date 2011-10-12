@@ -6,6 +6,7 @@ use diagnostics;  # For development
 use Math::Expression::Evaluator;
 use Try::Tiny;
 use POSIX qw( strftime );
+use Time::Local;
 
 do "nhconst.pm";
 
@@ -912,6 +913,65 @@ sub str_to_yyyymmdd {
     return ("date" => $s);
 }
 
+sub dhm_str_to_timestamp {
+    my $s = lc(shift);
+    my $years = 0;
+    my $days = 0;
+    my $hours = 0;
+    my $mins = 0;
+    my $secs = 0;
+    $s =~ s/^(now|today)?-// if ($s =~ m/^(now|today)?-/);
+
+    if ($s =~ m/^(\d+)(y|yrs?|years?)/) {
+	$years = $1;
+	$s =~ s/^(\d+)(y|yrs?|years?)//;
+    }
+    if ($s =~ m/^(\d+)d(ays?)/) {
+	$days = $1;
+	$s =~ s/^(\d+)d(ays?)//;
+    }
+    if ($s =~ m/^(\d+)(h|hrs?|hours?)/) {
+	$hours = $1;
+	$s =~ s/^(\d+)(h|hrs?|hours?)//;
+    }
+    if ($s =~ m/^(\d+)(m|mins?|minutes?)/) {
+	$mins = $1;
+	$s =~ s/^(\d+)(m|mins?|minutes?)//;
+    }
+    if ($s =~ m/^(\d+)(s|secs?|seconds?)/) {
+	$secs = $1;
+	$s =~ s/^(\d+)(s|secs?|seconds?)//;
+    }
+    if ($s =~ m/^$/) {
+	return time() - ($years * 365*24*60*60) - ($days * 24*60*60) - ($hours * 60*60) - ($mins * 60) - $secs;
+    } else {
+	return -1;
+    }
+}
+
+sub str_to_timestamp {
+    my $s = lc(shift);
+    my $tmpstamp;
+    my $err;
+    if ($s eq "today" || $s eq "now") {
+	$s = time();
+    } elsif ($s eq "yesterday") {
+	$s = time() - (24*60*60);
+    } elsif ($s =~ m/(20[0-1][0-9])[^0-9]?([01][0-9])[^0-9]?([0123][0-9])/) {
+	my $year = $1;
+	my $mon = $2;
+	my $day = $3;
+	$s = timelocal(0, 0, 0, $day, $mon, $year);
+    } elsif ($s =~ m/^[0-9]+$/) {
+	# assume it's unixtime.
+    } elsif (($tmpstamp = dhm_str_to_timestamp($s)) > 0) {
+	$s = $tmpstamp;
+    } else {
+	$err = "unknown timestamp '".$s."'";
+    }
+    return ("timestamp" => $s, "error" => $err) if ($err);
+    return ("timestamp" => $s);
+}
 
 # @lines = splitline($longline, $length);
 sub splitline {

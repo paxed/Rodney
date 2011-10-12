@@ -773,10 +773,11 @@ sub mangle_sql_query {
 			}
 		    } elsif (($f eq "starttime") || ($f eq "endtime")) {
 			$d = lc($d);
-			if ($d eq "today" || $d eq "now") {
-			    $d = time();
-			} elsif ($d =~ m/(20[0-1][0-9])([01][0-9])([0123][0-9])/) {
-			    # TODO, convert to unix timestamp
+			my %tmpts = str_to_timestamp($d);
+			if ($tmpts{'error'}) {
+			    $errorstr = "'".$f."': ".$tmpts{'error'};
+			} else {
+			    $d = $tmpts{'timestamp'};
 			}
 		    } elsif ($f eq "realtime") {
 			$d = conv_hms($d);
