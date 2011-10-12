@@ -82,6 +82,7 @@ $STOP(...)	   If parameter is 0 or missing, stops processing here and returns th
 $QUIT(...)	   If parameter is a positive integer value, there's a 1-in-parameter chance the bot stops processing
 		   the trigger and returns with nothing, so the bot says nothing.
 $RNDCHAR(...)	   like $CHAR, but can be given a role as a parameter, eg. "$RNDCHAR(Wiz)"
+$GOD(...)	   Gives a random god(dess) of role or alignment, or any role if parameter does not match any role or align.
 $REPLACESTR(...)   Takes 3 parameters, separated by a pipe. Replaces all occurrences of param1 in param3 with param2.
 $TIMEFMT(...)	   Use strftime(3) to display the current time.
 $LG(...)	   Perform !lg query (minus !lg and -dump), for example "$LG(scorchgeek won)"

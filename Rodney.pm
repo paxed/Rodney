@@ -3059,6 +3059,7 @@ sub parse_strvariables {
 	'$SET'        => \&paramstr_setvar,
 	'$GET'        => \&paramstr_getvar,
 	'$'           => \&paramstr_getvar,
+	'$GOD'        => \&paramstr_rndgod,
 	'$NICK'   => $nick,
 	'$CHAN'   => $channel,
 	'$SELF'   => $selfnick,

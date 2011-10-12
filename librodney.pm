@@ -104,6 +104,33 @@ sub paramstr_possessive {
     return $s."'s";
 }
 
+# return a random god, or one for the role we want paramstr_rndgod("wiz")
+sub paramstr_rndgod {
+    my $role = shift || undef;
+    my $god;
+    my $idx = 0;
+    my @roles = keys(%nhconst::gods);
+    if (grep { lc($_) eq $role } @nhconst::aligns ) {
+	my @tmpgods;
+	$idx = 1 if ($role eq lc($nhconst::aligns[1]));
+	$idx = 2 if ($role eq lc($nhconst::aligns[2]));
+	foreach (@roles) {
+	    push(@tmpgods, $nhconst::gods{$_}[$idx]) if ($_ ne "pri");
+	}
+	$god = $tmpgods[rand(@tmpgods)];
+    } else {
+	$idx = int(rand(3));
+	$role = lc(substr($role, 0, 3)) if ($role);
+	while (!$role || $role eq "pri") {
+	    $role = $roles[rand(@roles)];
+	}
+	$god = $nhconst::gods{$role}[$idx];
+    }
+    $god =~ s/^_//g;
+
+    return $god;
+}
+
 # return a random value from str_rnd("2,5") or str_rnd("3d6");
 sub paramstr_rnd {
     my $s = shift;

@@ -40,3 +40,19 @@ our %dnums_short = (
     -3 => "Fire",
     -2 => "Air",
     -1 => "Earth");
+
+our %gods = (
+    'arc' => ["Quetzalcoatl", "Camaxtli", "Huhetotl"],
+    'bar' => ["Mitra", "Crom", "Set"],
+    'cav' => ["Anu", "_Ishtar", "Anshar"],
+    'hea' => ["_Athena", "Hermes", "Poseidon"],
+    'kni' => ["Lugh", "_Brigit", "Manannan Mac Lir"],
+    'mon' => ["Shan Lai Ching", "Chih Sung-tzu", "Huan Ti"],
+    'pri' => [undef, undef, undef],
+    'rog' => ["Issek", "Mog", "Kos"],
+    'ran' => ["Mercury", "_Venus", "Mars"],
+    'sam' => ["_Amaterasu Omikami", "Raijin", "Susanowo"],
+    'tou' => ["Blind Io", "_The Lady", "Offler"],
+    'val' => ["Tyr", "Odin", "Loki"],
+    'wiz' => ["Ptah", "Thoth", "Anhur"]
+    );
