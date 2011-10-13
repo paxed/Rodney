@@ -3109,7 +3109,7 @@ sub handle_learndb_trigger {
     my ( $self, $kernel, $channel, $nick, $cmdargs, $output) = @_;
 
     my @arglist = split(/ /, $cmdargs);
-    my $term = $channel.":".$arglist[0];
+    my $term = $channel.":".(@arglist ? $arglist[0] : $cmdargs);
     my @a;
 
     my $retval = 0;
