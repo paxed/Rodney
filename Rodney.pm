@@ -1423,8 +1423,8 @@ sub on_d_tick {
 		if (!$line) { next; }
 		$line =~ s/\n//;
 		if ($line =~ m/^.+$/) {
-		    my %dat = parse_xlogline($line, 1);
-		    my $infostr = "$dat{'player'} $dat{'message'}, on turn $dat{'turns'}";
+		    my %dat = parse_xlogline($line);
+		    my $infostr = "$dat{'player'} ($dat{'crga'}) $dat{'message'}, on turn $dat{'turns'}";
 		    $self->botspeak($kernel, $infostr);
 		}
 	}
