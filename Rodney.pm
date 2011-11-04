@@ -2969,6 +2969,10 @@ sub parse_strvariables_core {
                     }
                 }
             }
+	    if ($found == 0 && ($maybevar =~ m/^\$/)) {
+		$maybevar =~ s/^\$/\x03/;
+		$str = $prefix . $maybevar;
+	    }
         }
     } while ($found && ($strvariables_processing == 0));
 
@@ -3099,6 +3103,8 @@ sub parse_strvariables {
     $str = parse_strvariables_core($str);
 
     return "" if ($strvariables_processing == 2);
+
+    $str =~ s/\x03/\$/g;
 
     return paramstr_unescape($str);
 }
