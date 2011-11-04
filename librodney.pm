@@ -8,7 +8,7 @@ use Try::Tiny;
 use POSIX qw( strftime );
 use Time::Local;
 
-do "nhconst.pm";
+use nhconst;
 
 
 # decode_xlog_datastr("conduct", "0x102")

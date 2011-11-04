@@ -3,8 +3,6 @@ package Rodney;
 use strict;
 use warnings;
 
-use AutoLoader 'AUTOLOAD';
-
 use diagnostics;  # For development
 use vars qw($VERSION @ISA @EXPORT);
 use Carp;
@@ -39,13 +37,13 @@ require Exporter;
 $VERSION = '0.04';
 
 
-do "nhconst.pm";
-do "librodney.pm";
-do "learndb.pm";
-do "seendbi.pm";
-do "nhbugs.pm";
-do "messages.pm";
-do "nickidlist.pm";
+use nhconst;
+use librodney;
+use learndb;
+use seendbi;
+use nhbugs;
+use messages;
+use nickidlist;
 
 
 

@@ -56,3 +56,8 @@ our %gods = (
     'val' => ["Tyr", "Odin", "Loki"],
     'wiz' => ["Ptah", "Thoth", "Anhur"]
     );
+
+
+1;
+
+__END__
