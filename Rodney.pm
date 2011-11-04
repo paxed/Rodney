@@ -2047,6 +2047,16 @@ sub do_sqlquery_xlogfile {
 sub do_pubcmd_query_xlogfile {
     my ($self, $kernel, $channel, $nick, $query) = @_;
 
+    my $nqueue = $querythread_input->pending();
+    while ($nqueue > 0) {
+	$nqueue--;
+	my ($chn, $nck, $qry) = split(/\t/, $querythread_input->peek($nqueue));
+	if (lc($nck) eq lc($nick)) {
+	    $self->botspeak($kernel, "$nick: You've got a query in the queue already.", $channel);
+	    return;
+	}
+    }
+
     $querythread_input->enqueue($channel."\t".$nick."\t".$query);
 
 #    db_connect($self);
@@ -3264,7 +3274,7 @@ sub handle_querythread_output {
 	if (scalar(@querythread_output)) {
 	    my $str = pop(@querythread_output);
 	    my ($channel,$nick,$query) = split(/\t/, $str);
-	    $self->botspeak($kernel, $query, $channel);
+	    $self->botspeak($kernel, "$nick: $query", $channel);
 	}
     }
     $kernel->delay('handle_querythread_out' => 10);
