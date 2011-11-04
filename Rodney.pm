@@ -2985,6 +2985,7 @@ sub parse_strvariables {
     $cmdargs = "" if (!defined $cmdargs);
 
     $cmdargs =~ s/\s+/ /g;
+    $cmdargs =~ s/\$/\x03/g;
 
     my @arglist = split(/ /, paramstr_escape(paramstr_trim($cmdargs)));
     shift @arglist;
