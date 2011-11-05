@@ -413,6 +413,10 @@ sub mangle_sql_query {
 	"newest" => "max=enddate max=endtime hide=endtime"
         );
 
+    my %simple_settings = (
+	"distinct" => 0
+	);
+
     my %deathdlev_conv = (
       dod =>        0, dungeons    => 0,
       gehennom =>   1, hell        => 1,
@@ -791,10 +795,10 @@ sub mangle_sql_query {
 	  } else {
 	      $errorstr = "unknown operator '".$o."'";
 	  }
-	} else {
+	} else { # just a simple string param, not foo=bar
 	    $f = $tmpd;
 	    $nofields = $nofields + 1;
-	    if ($nofields != 1) {
+	    if ($nofields != 1) { # we've already found a player name, maybe it's something else
 		$f = lc($f);
 		$f = $field_renames{$f} if ( grep { $_ eq $f } keys(%field_renames) );
 		if ( grep { $_ eq $f } @fields ) {
@@ -824,11 +828,13 @@ sub mangle_sql_query {
 			} else {
 			    $errorstr = "unknown field '".$tmpf."'".perhaps_you_meant($tmpf, @fields);
 			}
+		    } elsif ($simple_settings{$f}) {
+			$simple_settings{$f} = 1;
 		    } else {
 			$errorstr = "unknown field '".$f."'".perhaps_you_meant($f, @fields);
 		    }
 		}
-	    } else {
+	    } else { # assume it's a player name
 
 		if (substr($f,0,1) eq "!") {
 		    $plrname_oper = "!=";
@@ -885,7 +891,9 @@ sub mangle_sql_query {
 	undef($skip);
     }
 
-    $sql .= "select ".join(",", @getfields)." from xlogfile";
+    $sql .= "select ";
+    $sql .= "distinct " if ($simple_settings{distinct});
+    $sql .= join(",", @getfields)." from xlogfile";
 
     $sql .= " where ".join(" and ", @wheres) if (@wheres);
 
