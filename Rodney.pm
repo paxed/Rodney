@@ -38,7 +38,7 @@ $VERSION = '0.04';
 
 
 use nhconst;
-use librodney;
+do "librodney.pm";
 use learndb;
 use seendbi;
 use nhbugs;
@@ -3649,6 +3649,7 @@ sub handle_wiki_datagrams {
     if ($ngrams > 0) {
         $data = pop(@wiki_datagram_queue);
         $message = mangle_wiki_datagram_msg($data->{"message"});
+	return if ($message =~ m/^..Special.Log.patrol/);
         if ($ngrams > 1) {
             $self->botspeak($kernel, "$ngrams changes, newest is: $message", $chn) if ($message ne "");
             @wiki_datagram_queue = ();

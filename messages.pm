@@ -10,7 +10,7 @@ use diagnostics;
 
 use DBI;
 
-use librodney;
+do "librodney.pm";
 
 # Set us up the bomb
 # my $messagesdb = Messages->new();
