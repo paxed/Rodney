@@ -17,6 +17,8 @@ For example:
 ----
 
 You can use special commands in the trigger definitions. The commands are case sensitive.
+The dollar signs can be escaped, like this: \$LC(\$ARGS)
+
 Commands with parameters can be nested.
 
 Simple commands:

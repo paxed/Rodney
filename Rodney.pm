@@ -3025,6 +3025,7 @@ sub parse_strvariables {
 
     my $selfnick = $self->{'Nick'};
     my $str = $string;
+    $str =~ s/\\\$/\x03/g; # escaped dollar signs
 
     %strvariables_paramrepls = (
 	'$AN'         => \&an,
