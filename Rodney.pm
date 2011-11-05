@@ -1842,6 +1842,7 @@ sub sqlquery_subthread {
     my $channel;
     my $nick;
     while (1) {
+	sleep(2);
 	$query = $querythread_input->peek();
 	if ($query && $querythread_input->pending()) {
 
