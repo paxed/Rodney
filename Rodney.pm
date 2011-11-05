@@ -1842,8 +1842,8 @@ sub sqlquery_subthread {
     my $channel;
     my $nick;
     while (1) {
-	$query = $querythread_input->dequeue();
-	if ($query) {
+	$query = $querythread_input->peek();
+	if ($query && $querythread_input->pending()) {
 
 	    my @tmp = split(/\t/, $query);
 	    $channel = $tmp[0];
@@ -1857,6 +1857,7 @@ sub sqlquery_subthread {
 		lock(@querythread_output);
 		push(@querythread_output, $channel."\t".$nick."\t".$str);
 	    }
+	    $querythread_input->dequeue();
 	}
     }
 }
