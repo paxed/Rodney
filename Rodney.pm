@@ -2044,6 +2044,26 @@ sub do_sqlquery_xlogfile {
     return join("\n", @ret);
 }
 
+sub cancel_xlogfile_query {
+    my ($self, $kernel, $channel, $nick) = @_;
+
+    lock($querythread_input);
+
+    my $nqueue = $querythread_input->pending();
+    while ($nqueue > 0) {
+	$nqueue--;
+	my ($chn, $nck, $qry) = split(/\t/, $querythread_input->peek($nqueue));
+	if (lc($nck) eq lc($nick) && lc($chn) eq lc($channel)) {
+	    if (!$nqueue) {
+		$self->botspeak($kernel, "$nick: Too late.", $channel);
+	    } else {
+		$self->botspeak($kernel, "$nick: OK, cancelled.", $channel);
+		$querythread_input->extract($nqueue);
+	    }
+	    return;
+	}
+    }
+}
 
 sub do_pubcmd_query_xlogfile {
     my ($self, $kernel, $channel, $nick, $query) = @_;
@@ -2524,7 +2544,15 @@ sub do_pubcmd_lastlog {
 sub priv_and_pub_msg {
     my ( $self, $kernel, $channel, $nick, $msg ) = @_;
 
-    if ($msg =~ m/^!lg\s+(.+)\s*$/i) {
+    if ($msg =~ m/^!lg\s+-?-cancel/i ||
+	$msg =~ m/^!lg\s+-?-rm/i ||
+	$msg =~ m/^!rmlg\s+.*$/i ||
+	$msg =~ m/^!rmlg\s*$/i) {
+# !lg --cancel *
+# !rmlg *
+	cancel_xlogfile_query($self, $kernel, $channel, $nick);
+    }
+    elsif ($msg =~ m/^!lg\s+(.+)\s*$/i) {
 # !lg *
 	do_pubcmd_query_xlogfile($self, $kernel, $channel, $nick, $1);
     }

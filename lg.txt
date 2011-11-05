@@ -159,6 +159,7 @@ This is a command to query the xlogfile database via Rodney the IRC bot.
 -Limiting entries: You can limit output with "limit=N" to N entries,
  for example "!lg * won limit=1"
 
+-Queries in the queue can be cancelled with !rmlg.
 
 Examples:
 ---------
