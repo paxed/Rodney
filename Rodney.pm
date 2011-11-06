@@ -44,12 +44,9 @@ use seendbi;
 use nhbugs;
 use messages;
 use nickidlist;
+use ignorance;
 
 
-
-
-# stuff ignored by the bot. "hostmask regex" -form.
-my @ignorance;
 
 my @nh_monsters;
 my @nh_objects;
@@ -59,6 +56,7 @@ my $nh_dumpurl;
 my $userdata_ttyrec;
 my $userdata_ttyrec_puburl;
 
+my $ignorance = Ignorance->new();
 my $learn_db = LearnDB->new();
 my $seen_db = SeenDB->new();
 my $buglist_db = NHBugsDB->new();
@@ -141,6 +139,9 @@ sub run {
 
     @nh_monsters = read_textdata_file($self->{'nh_monsters_file'});
     @nh_objects = read_textdata_file($self->{'nh_objects_file'});
+
+    $ignorance->init($self->{'ignorancefile'});
+    $ignorance->load();
 
     print "Running the bot.\n";
 
@@ -1032,20 +1033,6 @@ sub buglist_update {
     if ($kernel) { $kernel->delay('buglist_update' => 300); }
 }
 
-sub line_is_ignored {
-    my $who = shift;
-    my $line = shift;
-    my $a;
-    my $return = 0;
-
-    foreach $a (@ignorance) {
-	my @b = ( split / /, $a );
-	if (($who =~ m/\l$b[0]\Q/i) && ($line =~ m/\l$b[1]\Q/i)) {
-	    return 1;
-	}
-    }
-    return $return;
-}
 
 
 # returns an array containing the active players, sorted alphabetically
@@ -3297,7 +3284,7 @@ sub on_public {
 
     check_messages($self, $kernel, $nick, $channel);
 
-    if (line_is_ignored($who, $msg)) {
+    if ($ignorance->is_ignored($who, $msg)) {
 	$self->bot_priv_msg($kernel, "[ignored] <$nick> $msg");
 	return;
     }
@@ -3350,17 +3337,19 @@ sub admin_msg {
 	}
 	elsif ($msg =~ m/^!ignore\s(\S+ +\S.*)$/i) {
 	    my $ign = $1;
-	    my $ignik = (split / /, $ign)[0];
-	    push(@ignorance, $ign);
-	    $self->botspeak($kernel, "Now ignoring: $ignik", $nick);
+	    $ign =~ s/ /\t/;
+	    my @ignik = (split /\t/, $ign);
+	    $ignorance->add($ign);
+	    $self->botspeak($kernel, "Now ignoring: user '".$ignik[0]."' saying '".$ignik[1]."'", $nick);
 	}
 	elsif ($msg =~ m/^!ignore$/i) {
 	    my $a;
-	    my $count = 0;
-	    if ($#ignorance >= 0) {
-		foreach $a (@ignorance) {
-		    $self->botspeak($kernel, "$count: $a", $nick);
-		    $count++;
+	    my $count = scalar($ignorance->count());
+	    if ($count > 0) {
+		for (my $cnt = 0; $cnt < $count; $cnt++) {
+		    $a = $ignorance->get_nth($cnt);
+		    my @ign = split( /\t/, $a);
+		    $self->botspeak($kernel, $cnt.": user '".$ign[0]."' saying '".$ign[1]."'", $nick);
 		}
 	    } else {
 		    $self->botspeak($kernel, "Nothing is ignored", $nick);
@@ -3388,8 +3377,13 @@ sub admin_msg {
 	}
 	elsif ($msg =~ m/^!rmignore\s(\d+)$/i) {
 	    my $ign = $1;
-	    $self->botspeak($kernel, "De-ignoring: ".$ignorance[$ign], $nick);
-	    splice(@ignorance, $ign, 1);
+	    if ($ign >= 0 && $ign < $ignorance->count()) {
+		my @a = split(/\t/, $ignorance->get_nth($ign));
+		$self->botspeak($kernel, "De-ignoring: user '".$a[0]."' saying '".$a[1]."'", $nick);
+		$ignorance->rm_nth($ign);
+	    } else {
+		$self->botspeak($kernel, "No such ignorance.", $nick);
+	    }
 	}
 #	elsif ($msg =~ m/^!msg\s(.+)\s(.+)$/i) {
 #	    my $tonick = $1;
@@ -3523,7 +3517,7 @@ sub on_msg {
 
     check_messages($self, $kernel, $nick, $nick);
 
-    return if (line_is_ignored($who, $msg));
+    return if ($ignorance->is_ignored($who, $msg));
 
     $self->bot_priv_msg($kernel, "<$nick> $msg") if ((defined $send_msg_id) && ($send_msg_id ne $nick));
 
@@ -3682,6 +3676,7 @@ sub kill_bot {
     database_sync();
     $seen_db->sync();
     log_channel_msg_flush();
+    $ignorance->save();
     die("kill_bot()");
 }
 
@@ -3715,6 +3710,7 @@ sub on_disco {
     database_sync();
     $seen_db->sync();
     log_channel_msg_flush();
+    $ignorance->save();
 
     exit(0);
 

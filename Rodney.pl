@@ -85,6 +85,7 @@ my $botdatapath = '/opt/nethack/rodney';
 			     db => $chrootpath.'/dgldir/dgamelaunch.db'
 			 },
 
+			 ignorancefile => $botdatapath.'/data/ignored.txt',
 			 nh_monsters_file => $botdatapath.'/data/nh343monsters.txt',
 			 nh_objects_file => $botdatapath.'/data/nh343objects.txt',
 			 learn_url => $pub_url.'/Rodney/rodney-learn.php?s=',
