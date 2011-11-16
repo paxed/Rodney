@@ -1937,7 +1937,7 @@ sub do_sqlquery_xlogfile {
 		    push(@ret, "sql:'".$dat{"sql"}."'") if ($dat{"sql"});
 		    push(@ret, "query:'".$query."'");
 		}
-		push(@ret, "$nick: That query has ".$count_num." matches.");
+		push(@ret, "That query has ".$count_num." matches.");
 	    }
 	}
 	return join("\n", @ret);
@@ -2025,7 +2025,7 @@ sub do_sqlquery_xlogfile {
 		if ($nresults) {
 		    push(@ret, $dat{"fields"}.": ".$str);
 		} else {
-		    push(@ret, "$nick: No matches for that query.");
+		    push(@ret, "No matches for that query.");
 		}
 	    }
 	    if ($channel eq "paxed") {
