@@ -1166,7 +1166,8 @@ sub current_players {
     my $pretext;
 
     my $plrnames = join(', ', @players);
-    $pretext = "$#players player" . (($#players == 1) ? '' : 's') . ': ';
+    $pretext = scalar(@players) . " player" . 
+        ((scalar(@players) == 1) ? '' : 's') . ': ';
 
     if (@players) {
 	$plrnames = $pretext.$plrnames;
