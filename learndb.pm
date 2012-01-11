@@ -320,7 +320,7 @@ sub query {
 	    }
 	}
     }
-    @return = map "$term\[".($_+1)."]: $self->{'db'}{$term}[$_][1]", 0..$#$termdefs;
+    @return = map "$term\[".($_+1)."/".($#$termdefs+1)."]: $self->{'db'}{$term}[$_][1]", 0..$#$termdefs;
 
     return @return;
 }
