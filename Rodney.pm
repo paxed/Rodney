@@ -3429,7 +3429,7 @@ sub admin_msg {
 		$self->botspeak($kernel, "Sorry, $chn is not a channel i'm on.", $nick);
 	    }
 	}
-	elsif ($msg =~ m/^!privme\s(.+)\s(.+)/i) {
+	elsif ($msg =~ m/^!privme\s(\S+)\s(.+)/i) {
 	    my $target = $1;
 	    my $message = $2;
 	    $self->botaction($kernel, $message, $target);
