@@ -3168,7 +3168,7 @@ sub handle_learndb_trigger {
     if (@a > 0) {
 
 	my $b = $a[rand(@a)];
-	$b =~ s/^\S+\[\d+\]: //;
+	$b =~ s/^\S+\[\d+\/\d+\]: //;
 	$b = $self->parse_strvariables($channel, $nick, $cmdargs, $b);
 
 	foreach my $l (split(/\x02THEN\s/, $b)) {
