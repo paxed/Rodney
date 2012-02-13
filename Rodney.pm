@@ -3356,6 +3356,10 @@ sub admin_msg {
 		    $self->botspeak($kernel, "Nothing is ignored", $nick);
 	    }
 	}
+	elsif ($msg =~ m/^!shorten\s+(\S+)$/i) {
+	    my $urli = $1;
+	    $self->botspeak($kernel, shorten_url($urli), $nick);
+	}
 	elsif ($msg =~ m/^!togglebuglist\s*$/i) {
 	    if ($self->{'CheckBug'} > 0) {
 		$self->{'CheckBug'} = 0;

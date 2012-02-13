@@ -26,5 +26,6 @@ the one defined in Rodney.pl
 !showmsg   		   Make Rodney show private messages to you
 !die x			   Kill Rodney
 !help			   Display URL for this help
+!shorten <url>		   Shorten URL with http://url.alt.org/ shortener
 
 Admins can also use public-msg-only commands in privmsg.
