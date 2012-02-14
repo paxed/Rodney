@@ -73,6 +73,7 @@ $RND(NdM)	   Returns a random die roll with dice NdM.
 $SHUFFLE(...)	   Accepts a pipe-delimited list of strings, and returns all of them in random order, eg. "$SHUFFLE(foo|bar|baz)".
 $CHOICE(...)	   Accepts a pipe-delimited list of strings, and returns one of them.
 		   Each string can be prepended with "N*" to multiply the weight for that string, eg. "$CHOICE(10*foo|bar)".
+		   Can also accept one of @role, @race, @gender, @char, @coin, @align, or a diceroll in a D-notation.
 $URLENC(...)	   Encode the parameter for URL usage.
 $ROT13(...)	   Encode the parameter with rot13.
 $IF(...)	   Takes either 2, 3 or 4 parameters, separated by a pipe.

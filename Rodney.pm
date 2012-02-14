@@ -2560,46 +2560,8 @@ sub priv_and_pub_msg {
 	do_pubcmd_version($self, $kernel, $channel);
     }
     elsif ( $msg =~ m/^!rn[gd]\s+(.+)$/i ) {
-# !rng
-# !rnd
-	my $param = $1;
-        my @arg;
-	my $a;
-	my $retval;
-	if ($param =~ m/\|/) {
-	    @arg = split(/\|/, $param);
-	} else {
-	    @arg = split(/ /, $param);
-	}
-	if ($arg[0] =~ /\@roles?/i) { $retval = $nhconst::roles[rand @nhconst::roles]; }
-	elsif ($arg[0] =~ /\@races?/i) { $retval = $nhconst::races[rand @nhconst::races]; }
-	elsif ($arg[0] =~ /\@genders?/i || $arg[0] =~ /\@sex(es)?/i) { $retval = $nhconst::genders[rand @nhconst::genders]; }
-	elsif ($arg[0] =~ /\@char/i) { $retval = random_nh_char(); }
-	elsif ($arg[0] =~ /\@coin/i || $arg[0] =~ /\@zorkmid/i) { @arg = ('heads','tails');	}
-	elsif ($arg[0] =~ /\@players?/i) { @arg = $self->player_list(); }
-	elsif ($arg[0] =~ /\@align(ment)?s?/i) { $retval = $nhconst::aligns[rand @nhconst::aligns]; }
-	else {
-	    foreach my $role (@nhconst::roles) {
-		$retval = random_nh_char($role) if $arg[0] =~ /^\@$role$/i;
-	    }
-	}
-
-	if ($retval) {
-	    $self->botspeak($kernel, 'The RNG says: '.$retval, $channel);
-	}
-	elsif ($arg[0] =~ m/^(\d*)d(\d+)$/i) {
-	    my ($num, $sides) = (max($1, 1), max(int $2, 1));
-		if ($num <= 1000 && $sides <= 1000) {
-	    	my $result = diceroll($num, $sides);
-	    	my $dice = ($num == 1) ? 'die' : 'dice';
-	    	$self->botspeak($kernel, "The RNG rolls the $dice and gets $result.", $channel);
-		} else {
-			$self->botspeak($kernel, "Result: 42.", $channel);
-		}
-	}
-	elsif ($#arg > 0) {
-	    $self->botspeak($kernel, 'The RNG says: '.($arg[rand(@arg)]), $channel);
-	}
+# !rng, !rnd
+	$self->botspeak($kernel, rng_choice($1, 1), $channel);
     }
     elsif ( $msg =~ m/^!seen/i ) {
 # !seen nick
@@ -3060,7 +3022,7 @@ sub parse_strvariables {
 	'$URLENC'     => \&uri_escape,
 	'$RND'        => \&paramstr_rnd,
 	'$SHUFFLE'    => \&paramstr_shuffle,
-	'$CHOICE'     => \&choice,
+	'$CHOICE'     => \&rng_choice,
 	'$LC'         => \&paramstr_lc,
 	'$LCFIRST'    => \&paramstr_lcfirst,
 	'$UC'         => \&paramstr_uc,

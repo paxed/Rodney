@@ -1201,6 +1201,50 @@ sub choice {
     return $choices[0];
 }
 
+sub rng_choice {
+    my $param = shift || "";
+    my $explain = shift || 0;
+    my @arg;
+    my $a;
+    my $retval;
+    return choice($param) if ($param =~ m/\|/);
+
+    @arg = split(/ /, $param);
+    if ($arg[0] =~ /\@roles?/i) { $retval = $nhconst::roles[rand @nhconst::roles]; }
+    elsif ($arg[0] =~ /\@races?/i) { $retval = $nhconst::races[rand @nhconst::races]; }
+    elsif ($arg[0] =~ /\@genders?/i || $arg[0] =~ /\@sex(es)?/i) { $retval = $nhconst::genders[rand @nhconst::genders]; }
+    elsif ($arg[0] =~ /\@char/i) { $retval = random_nh_char(); }
+    elsif ($arg[0] =~ /\@coin/i || $arg[0] =~ /\@zorkmid/i) { @arg = ('heads','tails');	}
+    elsif ($arg[0] =~ /\@align(ment)?s?/i) { $retval = $nhconst::aligns[rand @nhconst::aligns]; }
+    else {
+	foreach my $role (@nhconst::roles) {
+	    $retval = random_nh_char($role) if $arg[0] =~ /^\@$role$/i;
+	}
+    }
+
+    if ($retval) {
+	return $retval if (!$explain);
+	return 'The RNG says: '.$retval;
+    }
+    elsif ($arg[0] =~ m/^(\d*)d(\d+)$/i) {
+	my ($num, $sides) = (max($1, 1), max(int $2, 1));
+	if ($num <= 1000 && $sides <= 1000) {
+	    my $result = diceroll($num, $sides);
+	    my $dice = ($num == 1) ? 'die' : 'dice';
+	    return $result if (!$explain);
+	    return "The RNG rolls the $dice and gets $result.";
+	} else {
+	    return "42" if (!$explain);
+	    return "Result: 42.";
+	}
+    }
+    elsif ($#arg > 0) {
+	$retval = $arg[rand(@arg)];
+	return $retval if (!$explain);
+	return 'The RNG says: '.$retval;
+    }
+}
+
 
 # Random role-race-gender-align combo
 sub random_nh_char {
