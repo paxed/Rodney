@@ -2164,7 +2164,6 @@ sub do_pubcmd_dbquery {
     }
 
     if ($term_no) {
-        if ($a[0] =~ /^Redirected/) { shift @a; } # so that redirected_term[N] Does The Right Thing(TM).
 	my $b = $#a + 1;
 	if ($term_no > $b) {
 	    $self->botspeak($kernel,
@@ -3163,7 +3162,6 @@ sub handle_learndb_trigger {
 	$term = "#*:".$arglist[0];
 	@a = $learn_db->query($term);
     }
-    shift @a if (@a && ($a[0] =~ m/^Redirected to /));
 
     if (@a > 0) {
 

@@ -313,9 +313,6 @@ sub query {
 	    if ($depth < 5 && defined($redir = $self->is_redirect($termdefs))) {
 		# This can return somewhat incorrect results if
 		@return = $self->query($redir, $depth + 1);
-		if (@return && $return[0] !~ /^Redirected to/) {
-		    unshift @return, "Redirected to $redir";
-		}
 		return @return;
 	    }
 	}
