@@ -26,7 +26,7 @@ my $querythread_input  = Thread::Queue->new(); # format: channel\tnick\tresult
 my @querythread_output :shared = (); # format: channel\tnick\tresult
 
 my $irc;
-
+my $kernel;
 
 require Exporter;
 
@@ -219,7 +219,9 @@ sub _poe_default_msg {
 # Start the bot things up
 sub bot_start {
 
-    my ( $self, $kernel, $session ) = @_[ OBJECT, KERNEL, SESSION ];
+    my ( $self, $session ) = @_[ OBJECT, SESSION ];
+
+    $kernel = $_[ KERNEL ];
 
     my $ts = scalar(localtime);
 
@@ -1019,7 +1021,7 @@ sub paramstr_nwikipages {
 }
 
 sub buglist_update {
-    my ( $self, $kernel ) = @_[ OBJECT, KERNEL ];
+    my ( $self ) = $_[ OBJECT ];
 
     my $outstr = $buglist_db->update_buglist();
     if ($outstr) {
@@ -1353,7 +1355,7 @@ sub setup_tail {
 }
 
 sub on_d_tick {
-	my ( $self, $kernel ) = @_[ OBJECT, KERNEL ];
+	my ( $self ) = $_[ OBJECT ];
 	my $line;
 
 	for ($curpos = tell($LOGFILE); $line = <$LOGFILE> ; $curpos = tell($LOGFILE)) {
@@ -1524,7 +1526,7 @@ sub highscore_query_nick {
 }
 
 sub database_sync {
-    my ($self, $kernel) = @_[ OBJECT, KERNEL ];
+    my ($self) = $_[ OBJECT ];
     $learn_db->sync();
     if ($kernel) { $kernel->delay('database_sync' => 600); }
 }
@@ -1546,7 +1548,7 @@ sub bot_priv_msg {
 # Join specified channels
 sub on_connect {
 
-    my ( $self, $kernel ) = @_[ OBJECT, KERNEL ];
+    my ( $self ) = $_[ OBJECT ];
 #    $irc->yield( 'mode', $self->{'Nick'}, '+B' );
 
     print "on_connect\n";
@@ -1796,7 +1798,7 @@ sub botaction {
 # Please, let me know if it was you, so I can
 # give props!!
 sub keepalive {
-    my ( $self, $kernel, $heap ) = @_[ OBJECT, KERNEL, HEAP ];
+    my ( $self, $heap ) = @_[ OBJECT, HEAP ];
 
 #    print "keepalive\n";
 
@@ -3252,7 +3254,7 @@ sub on_public {
 }
 
 sub handle_querythread_output {
-    my ( $self, $kernel ) = @_[ OBJECT, KERNEL ];
+    my ( $self ) = $_[ OBJECT ];
 
     {
 	lock(@querythread_output);
@@ -3281,7 +3283,7 @@ my $parsestr_cmd_args = "";
 
 # admin commands
 sub admin_msg {
-    my ( $self, $kernel, $who, $nicks, $msg ) = @_;
+    my ( $self, $who, $nicks, $msg ) = @_;
 
     my $nick = ( split /!/, $who )[0];
 
@@ -3469,8 +3471,7 @@ sub admin_msg {
 # Handle privmsg communication.
 sub on_msg {
 
-    my ( $self, $kernel, $who, $nicks, $msg ) =
-      @_[ OBJECT, KERNEL, ARG0, ARG1, ARG2 ];
+    my ( $self, $who, $nicks, $msg ) = @_[ OBJECT, ARG0, ARG1, ARG2 ];
     my $nick = ( split /!/, $who )[0];
 
     my $time = localtime( time() );
@@ -3509,7 +3510,7 @@ sub on_msg {
 	}
     }
     elsif ($admin_nicks->is_identified($nick)) {
-	$self->admin_msg($kernel, $who, $nicks, $msg);
+	$self->admin_msg($who, $nicks, $msg);
     }
 }
 
@@ -3580,7 +3581,7 @@ sub mangle_wiki_datagram_msg {
 }
 
 sub handle_wiki_datagrams {
-    my ( $self, $kernel ) = @_[ OBJECT, KERNEL ];
+    my ( $self ) = $_[ OBJECT ];
 
     my $chn = $self->channel_for_action('wiki_report');
     my $message;
@@ -3648,7 +3649,7 @@ sub daemonize {
 sub on_disco {
 
     my $self = shift;
-#    my ($self, $kernel) = @_[ OBJECT, KERNEL ];
+#    my ($self) = $_[ OBJECT ];
 
 #    $kernel->delay('keepalive' => undef);
 #    $kernel->delay('d_tick' => undef);
