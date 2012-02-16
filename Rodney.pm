@@ -1707,11 +1707,17 @@ sub on_quit {
 sub on_join {
     my ( $self, $kernel, $who, $where ) = @_[ OBJECT, KERNEL, ARG0, ARG1 ];
 
-    push(@{$self->{'joined_channels'}}, $where);
+    my $irc = $_[SENDER]->get_heap();
 
     my $nick = ( split /!/, $who )[0];
     my $time = localtime( time() );
     print "[$where $time] JOIN: $nick\n";
+
+    if ($nick eq $irc->nick_name()) {
+	push(@{$self->{'joined_channels'}}, $where);
+	$self->botspeak($kernel, "So thou thought thou couldst kill me, fool.", $where);
+    }
+
     $nick =~ tr/A-Z/a-z/;
     $seen_db->seen_log($nick, "joined $where");
 }
