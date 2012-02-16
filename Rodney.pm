@@ -11,7 +11,6 @@ use POE::Component::IRC;
 use POE::Wheel::FollowTail;
 use POSIX qw( setsid );
 use DBI;
-use constant NICK => 'Rodney';
 use URI::Escape;
 use File::Basename;
 use IO::Socket::INET;
@@ -26,7 +25,7 @@ use Thread::Queue;
 my $querythread_input  = Thread::Queue->new(); # format: channel\tnick\tresult
 my @querythread_output :shared = (); # format: channel\tnick\tresult
 
-
+my $irc;
 
 
 require Exporter;
@@ -149,7 +148,7 @@ sub run {
 
     threads->create(\&sqlquery_subthread)->detach();
 
-    POE::Component::IRC->spawn(alias => NICK)
+    ($irc) = POE::Component::IRC->spawn()
 	|| croak "Cannot create new P::C::I object!\n";
 
     print "irc->new(nick)\n";
@@ -233,10 +232,9 @@ sub bot_start {
 
     die "Couldn't create server socket: $!" unless $socket;
 
-    $kernel->post( NICK, 'register', 'all' );
+    $irc->yield('register', 'all');
     print "nick register\n";
-    $kernel->post(
-        NICK,
+    $irc->yield(
         'connect',
         {
             Debug    => $self->{'Debug'},
@@ -1025,7 +1023,7 @@ sub buglist_update {
 
     my $outstr = $buglist_db->update_buglist();
     if ($outstr) {
-	$self->botspeak($kernel, $outstr);
+	$self->botspeak($outstr);
     }
 
     print "buglist_update\n" if ($self->{'Debug'});
@@ -1377,7 +1375,7 @@ sub on_d_tick {
 		my $recordmatch;
 		my $twitinfo = $infostr;
 
-		$self->botspeak($kernel, $infostr);
+		$self->botspeak($infostr);
 		$last_played_game = $oldstyle;
 
 		open(RECORDFILE, $self->{'NHRecordFile'}) || die ("Can't open file");
@@ -1388,7 +1386,7 @@ sub on_d_tick {
 			if ($recordmatch eq $oldstyle) { $recordno = $counter; }
 		}
 		if ($recordno) {
-			$self->botspeak($kernel, "$dat{'name'} reaches #$recordno on the top 2000 list.");
+			$self->botspeak("$dat{'name'} reaches #$recordno on the top 2000 list.");
 		}
 		close(RECORDFILE);
 
@@ -1397,7 +1395,7 @@ sub on_d_tick {
 		    my $dumpfile = fixstring($self->{'nh_dumppath'}, %dat);
 		    if (-e "$dumpfile") {
 			my $url = fixstring($self->{'nh_dumpurl'}, %dat);
-			$self->botspeak($kernel, $url);
+			$self->botspeak($url);
 			$twitinfo = "$dat{'name'} $dat{'death'}: $url";
 		    }
 
@@ -1419,7 +1417,7 @@ sub on_d_tick {
 		if ($line =~ m/^.+$/) {
 		    my %dat = parse_xlogline($line);
 		    my $infostr = "$dat{'player'} ($dat{'crga'}) $dat{'message'}, on turn $dat{'turns'}";
-		    $self->botspeak($kernel, $infostr);
+		    $self->botspeak($infostr);
 		}
 	}
 	seek($LIVELOGFILE,$livelog_pos,0);
@@ -1539,7 +1537,7 @@ my $send_msg_id = undef;
 sub bot_priv_msg {
     my ( $self, $kernel, $msg ) = @_;
     if (defined $send_msg_id) {
-	$self->botspeak($kernel, "BOTPRIVMSG: $msg", $send_msg_id);
+	$self->botspeak("BOTPRIVMSG: $msg", $send_msg_id);
     }
 }
 
@@ -1549,20 +1547,20 @@ sub bot_priv_msg {
 sub on_connect {
 
     my ( $self, $kernel ) = @_[ OBJECT, KERNEL ];
-#    $kernel->post( NICK, 'mode', $self->{'Nick'}, '+B' );
+#    $irc->yield( 'mode', $self->{'Nick'}, '+B' );
 
     print "on_connect\n";
 
     sleep 2;
 
-    $self->botspeak($kernel, "identify $self->{'Nickpass'}", 'Nickserv');
+    $self->botspeak("identify $self->{'Nickpass'}", 'Nickserv');
 
     print "nickserv\n";
 
     sleep 5; # just wait a bit for nickserv to cloak us
 
     foreach my $chan ( @{ $self->{'Channels'} } ) {
-        $kernel->post( NICK, 'join', $chan );
+        $irc->yield('join', $chan);
     }
     print "join channels\n";
 #    $kernel->delay('keepalive' => 300);
@@ -1573,7 +1571,7 @@ sub on_ping {
 
     my ( $self, $kernel, $who ) = @_[ OBJECT, KERNEL, ARG0 ];
     my $nick = ( split /!/, $who )[0];
-    $kernel->post( NICK, 'ctcpreply', $nick, "PING", "PONG" );
+    $irc->yield('ctcpreply', $nick, "PING", "PONG");
     $self->bot_priv_msg($kernel, "PING from $nick");
 }
 
@@ -1593,7 +1591,7 @@ sub on_ver {
 
     my ( $self, $kernel, $who ) = @_[ OBJECT, KERNEL, ARG0 ];
     my $nick = ( split /!/, $who )[0];
-    $kernel->post(NICK, 'ctcpreply', $nick, "VERSION", "Oh no, $self->{'Nick'}'s using the touch of death!");
+    $irc->yield('ctcpreply', $nick, "VERSION", "Oh no, $self->{'Nick'}'s using the touch of death!");
     $self->bot_priv_msg($kernel, "CTCP VERSION from $nick");
 }
 
@@ -1602,7 +1600,7 @@ sub on_finger {
 
     my ( $self, $kernel, $who ) = @_[ OBJECT, KERNEL, ARG0 ];
     my $nick = ( split /!/, $who )[0];
-    $kernel->post(NICK, 'ctcpreply', $nick, "FINGER", "Oh no, $self->{'Nick'}'s using the touch of death!");
+    $irc->yield('ctcpreply', $nick, "FINGER", "Oh no, $self->{'Nick'}'s using the touch of death!");
     $self->bot_priv_msg($kernel, "CTCP FINGER from $nick");
 }
 
@@ -1611,7 +1609,7 @@ sub on_page {
 
     my ( $self, $kernel, $who ) = @_[ OBJECT, KERNEL, ARG0 ];
     my $nick = ( split /!/, $who )[0];
-    $kernel->post(NICK, 'ctcpreply', $nick, "PAGE", "Oh no, $self->{'Nick'}'s using the touch of death!");
+    $irc->yield('ctcpreply', $nick, "PAGE", "Oh no, $self->{'Nick'}'s using the touch of death!");
     $self->bot_priv_msg($kernel, "CTCP PAGE from $nick");
 }
 
@@ -1621,7 +1619,7 @@ sub on_time {
     my ( $self, $kernel, $who ) = @_[ OBJECT, KERNEL, ARG0 ];
     my $nick = ( split /!/, $who )[0];
     my $ts = scalar(localtime);
-    $kernel->post( NICK, 'ctcpreply', $nick, "TIME", $ts );
+    $irc->yield('ctcpreply', $nick, "TIME", $ts );
     $self->bot_priv_msg($kernel, "CTCP TIME from $nick");
 }
 
@@ -1715,7 +1713,7 @@ sub on_join {
 
     if ($nick eq $irc->nick_name()) {
 	push(@{$self->{'joined_channels'}}, $where);
-	$self->botspeak($kernel, "So thou thought thou couldst kill me, fool.", $where);
+	$self->botspeak("So thou thought thou couldst kill me, fool.", $where);
     }
 
     $nick =~ tr/A-Z/a-z/;
@@ -1743,14 +1741,14 @@ sub on_nick_taken {
     print "on_nick_taken\n";
 
     my $nick  = $self->{'AltNick'};
-    $kernel->post(NICK, 'nick', "$nick");
+    $irc->yield('nick', "$nick");
     print "Nick was taken, trying $nick\n";
     # TODO: ghost $self->{'Nick'} and change nick to that.
 }
 
 # find the channel where we should do the action in.
 # $channel = $self->channel_for_action('i_say_foo');
-# $self->botspeak($kernel, "foo", $channel);
+# $self->botspeak("foo", $channel);
 sub channel_for_action {
     my ( $self, $action ) = @_;
 
@@ -1761,7 +1759,7 @@ sub channel_for_action {
 
 # Communicate with channel/nick
 sub botspeak {
-    my ($self, $kernel, $msg, $channel, $donotice) = @_;
+    my ($self, $msg, $channel, $donotice) = @_;
 
     my $capab_msg_maxlen = 400; # TODO: get this from the CAPAB string.
 
@@ -1769,20 +1767,19 @@ sub botspeak {
 
     if (defined $channel && ($channel =~ m/^#/)) {
 	if (!( grep {$_ eq $channel } @{$self->{'joined_channels'}} )) {
-	    $kernel->post( NICK, 'join', $channel );
+	    $irc->yield('join', $channel);
 	}
     }
 
     foreach my $tmpline (@lines) {
 	my @msglines = splitline($tmpline, $capab_msg_maxlen);
 	foreach $msg (@msglines) {
-	    $kernel->post(NICK,
-			  (((defined $donotice) && ($donotice == 1)) ? 'notice' : 'privmsg'),
+	    $irc->yield((((defined $donotice) && ($donotice == 1)) ? 'notice' : 'privmsg'),
 			  ((defined $channel) ? $channel : @{$self->{'Channels'}}[0]),
 			  $msg);
 
 	    if (defined $channel && ($channel =~ m/^#/)) {
-		log_channel_msg($self, $channel, NICK, $msg);
+		log_channel_msg($self, $channel, $self->{'Nick'}, $msg);
 	    }
 
 	}
@@ -1790,10 +1787,10 @@ sub botspeak {
 }
 
 sub botaction {
-    my ($self, $kernel, $msg, $channel) = @_;
-    $kernel->post(NICK, 'sl', "PRIVMSG $channel :\001ACTION $msg\001");
+    my ($self, $msg, $channel) = @_;
+    $irc->yield('sl', "PRIVMSG $channel :\001ACTION $msg\001");
     if (defined $channel && ($channel =~ m/^#/)) {
-	log_channel_msg($self, $channel, NICK, "*".NICK." ".$msg);
+	log_channel_msg($self, $channel, $self->{'Nick'}, "*".$self->{'Nick'}." ".$msg);
     }
 }
 
@@ -1808,8 +1805,8 @@ sub keepalive {
 
 #    $heap->{'keepalive_time'} += 30;
     $kernel->delay('keepalive' => 300);
-#    $self->botspeak($kernel, @{$self->{'Channels'}}[0], "KEEPALIVE: time:$heap->{'keepalive_time'}");
-    $kernel->post( NICK, 'sl', 'PING ' . time() );
+#    $self->botspeak(@{$self->{'Channels'}}[0], "KEEPALIVE: time:$heap->{'keepalive_time'}");
+    $irc->yield('sl', 'PING '.time());
 }
 
 
@@ -2058,9 +2055,9 @@ sub cancel_xlogfile_query {
 	my ($chn, $nck, $qry) = split(/\t/, $querythread_input->peek($nqueue));
 	if (lc($nck) eq lc($nick) && lc($chn) eq lc($channel)) {
 	    if (!$nqueue) {
-		$self->botspeak($kernel, "$nick: Too late.", $channel);
+		$self->botspeak("$nick: Too late.", $channel);
 	    } else {
-		$self->botspeak($kernel, "$nick: OK, cancelled.", $channel);
+		$self->botspeak("$nick: OK, cancelled.", $channel);
 		$querythread_input->extract($nqueue);
 	    }
 	    return;
@@ -2076,7 +2073,7 @@ sub do_pubcmd_query_xlogfile {
 	$nqueue--;
 	my ($chn, $nck, $qry) = split(/\t/, $querythread_input->peek($nqueue));
 	if (lc($nck) eq lc($nick)) {
-	    $self->botspeak($kernel, "$nick: You've got a query in the queue already.", $channel);
+	    $self->botspeak("$nick: You've got a query in the queue already.", $channel);
 	    return;
 	}
     }
@@ -2087,12 +2084,12 @@ sub do_pubcmd_query_xlogfile {
 #    my $str = do_sqlquery_xlogfile($channel, $nick, $query);
 #    db_disconnect();
 
-#    $self->botspeak($kernel, $str, $channel);
+#    $self->botspeak($str, $channel);
 }
 
 sub do_pubcmd_version {
     my ($self, $kernel, $channel) = @_;
-    $self->botspeak($kernel, $self->{'Version'}, $channel);
+    $self->botspeak($self->{'Version'}, $channel);
 }
 
 sub do_pubcmd_seen {
@@ -2104,20 +2101,20 @@ sub do_pubcmd_seen {
 	$mynick =~ tr/A-Z/a-z/;
 
 	if ($name eq $nick) {
-	    $self->botspeak($kernel, "Looking for yourself, $nick?", $channel);
+	    $self->botspeak("Looking for yourself, $nick?", $channel);
 	}
 	elsif ($name eq $mynick) {
-	    $self->botspeak($kernel, "I'm right here, foo!", $channel);
+	    $self->botspeak("I'm right here, foo!", $channel);
 	}
 	elsif (defined $fseen) {
-	    $self->botspeak($kernel, $fseen, $channel);
+	    $self->botspeak($fseen, $channel);
 	}
 	else {
-	    $self->botspeak($kernel, "Sorry, $nick, I haven't seen $name.", $channel);
+	    $self->botspeak("Sorry, $nick, I haven't seen $name.", $channel);
 	}
     }
     else {
-	$self->botspeak($kernel, "Huh?  What? Where?  Who?", $channel);
+	$self->botspeak("Huh?  What? Where?  Who?", $channel);
     }
 }
 
@@ -2131,7 +2128,7 @@ sub do_pubcmd_dbquery {
     my ($term, $sendto, $errsto, $donotice) = extract_query_and_target($tonickchan, $query, $nick, $channel);
     if ($sendto ne $nick && $sendto ne $channel) {
 	if (!$seen_db->seen_get($sendto)) {
-	    $self->botspeak($kernel, "$nick: I don't know $sendto.", $channel, $donotice);
+	    $self->botspeak("$nick: I don't know $sendto.", $channel, $donotice);
 	    return;
 	}
     }
@@ -2146,13 +2143,13 @@ sub do_pubcmd_dbquery {
     $term =~ tr/ /_/;
 
     if (lc $self->{'Nick'} eq lc $sendto) {
-	$self->botspeak($kernel, "$nick: I already know that.", $channel);
+	$self->botspeak("$nick: I already know that.", $channel);
 	return;
     }
 
     @a = $learn_db->query($term);
     if (@a == 0) {
-	$self->botspeak($kernel, "$term not found in dictionary. Trying a search.", $errsto, $donotice);
+	$self->botspeak("$term not found in dictionary. Trying a search.", $errsto, $donotice);
 	@a = $learn_db->search($term, \$error);
 
 	# on error, messages go to the requester
@@ -2166,27 +2163,26 @@ sub do_pubcmd_dbquery {
     }
 
     if (lc $sendto ne lc $errsto) {
-	$self->botspeak($kernel, "This definition is sent to you by $nick.", $sendto, $donotice);
+	$self->botspeak("This definition is sent to you by $nick.", $sendto, $donotice);
     }
 
     if ($term_no) {
 	my $b = $#a + 1;
 	if ($term_no > $b) {
-	    $self->botspeak($kernel,
-			    "There's only $b definition"
+	    $self->botspeak("There's only $b definition"
 			    .(($b > 1) ? "s" : "").
 			    " for $term.", $errsto, $donotice);
 	} else {
-	    $self->botspeak($kernel, $a[$term_no-1], $sendto, $donotice);
+	    $self->botspeak($a[$term_no-1], $sendto, $donotice);
 	}
     } else {
 	foreach $b (@a) {
-	    $self->botspeak($kernel, $b, $sendto, $donotice);
+	    $self->botspeak($b, $sendto, $donotice);
 	}
     }
 
     if (lc $sendto ne lc $errsto) {
-	$self->botspeak($kernel, "Definition sent to $sendto.", $nick, $donotice);
+	$self->botspeak("Definition sent to $sendto.", $nick, $donotice);
     }
 }
 
@@ -2200,7 +2196,7 @@ sub do_pubcmd_dbsearch {
 
     if ($sendto ne $nick && $sendto ne $channel) {
 	if (!$seen_db->seen_get($sendto)) {
-	    $self->botspeak($kernel, "I don't know $sendto.", $errsto, $donotice);
+	    $self->botspeak("I don't know $sendto.", $errsto, $donotice);
 	    return;
 	}
     }
@@ -2211,7 +2207,7 @@ sub do_pubcmd_dbsearch {
     $sendto = $errsto if $error;
 
     if (lc $sendto ne lc $errsto) {
-	$self->botspeak($kernel, "This definition is sent to you by $nick.", $sendto, $donotice);
+	$self->botspeak("This definition is sent to you by $nick.", $sendto, $donotice);
     }
 
     if (@searchresult > $self->{'SpeakLimit'} && $sendto =~ /^#/) {
@@ -2219,11 +2215,11 @@ sub do_pubcmd_dbsearch {
     }
 
     foreach $a (@searchresult) {
-	$self->botspeak($kernel, $a, $sendto, $donotice);
+	$self->botspeak($a, $sendto, $donotice);
     }
 
     if (lc $sendto ne lc $errsto) {
-	$self->botspeak($kernel, "Definition sent to $nick", $nick, $donotice);
+	$self->botspeak("Definition sent to $nick", $nick, $donotice);
     }
 }
 
@@ -2231,7 +2227,7 @@ sub do_pubcmd_dbinfo {
     my ($self, $kernel, $channel, $query) = @_;
     my $a;
     foreach $a ($learn_db->info($query)) {
-	$self->botspeak($kernel, $a, $channel);
+	$self->botspeak($a, $channel);
     }
 }
 
@@ -2248,10 +2244,10 @@ sub do_pubcmd_dbedit {
 
     if ($tnum) {
 	foreach $a ($learn_db->edit($term, $tnum, $edita, $editb, $opts)) {
-	    $self->botspeak($kernel, $a, $channel);
+	    $self->botspeak($a, $channel);
 	}
     } else {
-	$self->botspeak($kernel, "Term number required.", $channel);
+	$self->botspeak("Term number required.", $channel);
     }
 }
 
@@ -2265,7 +2261,7 @@ sub do_pubcmd_dbdelete {
 
     my $a;
     foreach $a ($learn_db->del($term,$num)) {
-	$self->botspeak($kernel, $a, $channel);
+	$self->botspeak($a, $channel);
     }
 }
 
@@ -2285,7 +2281,7 @@ sub do_pubcmd_dbswap {
     }
 
     foreach $a ($learn_db->swap($terma,$terman, $termb,$termbn)) {
-	$self->botspeak($kernel, $a, $channel);
+	$self->botspeak($a, $channel);
     }
 }
 
@@ -2294,7 +2290,7 @@ sub do_pubcmd_dbdebug {
     my $a;
 
     foreach $a ($learn_db->debug()) {
-	$self->botspeak($kernel, $a, $channel);
+	$self->botspeak($a, $channel);
     }
 }
 
@@ -2303,7 +2299,7 @@ sub do_pubcmd_dbadd {
     my $a;
 
     foreach $a ($learn_db->add($term,$nick,$def)) {
-	$self->botspeak($kernel, $a, $channel);
+	$self->botspeak($a, $channel);
     }
 }
 
@@ -2313,7 +2309,7 @@ sub do_pubcmd_bugs {
 
     my $bugs = $buglist_db->search_bugs($bugid);
     if ($bugs) {
-	$self->botspeak($kernel, "$bugs", $channel);
+	$self->botspeak("$bugs", $channel);
     }
 }
 
@@ -2321,14 +2317,14 @@ sub do_pubcmd_gamesby {
     my ($self, $kernel, $channel, $name) = @_;
     $name =~ tr/A-Z/a-z/;
     my $a = $self->log_data($name);
-    $self->botspeak($kernel, $a, $channel);
+    $self->botspeak($a, $channel);
 }
 
 sub do_pubcmd_ascensions {
     my ($self, $kernel, $channel, $name) = @_;
     $name =~ tr/A-Z/a-z/;
     my $a = $self->asc_data($name);
-    $self->botspeak($kernel, $a, $channel);
+    $self->botspeak($a, $channel);
 }
 
 sub do_pubcmd_streak {
@@ -2347,7 +2343,7 @@ sub do_pubcmd_streak {
 
     db_connect($self);
     if (!$dbh) {
-	$self->botspeak($kernel, "Xlogfile db disabled", $channel);
+	$self->botspeak("Xlogfile db disabled", $channel);
 	return;
     }
     my $sth = $dbh->prepare("SELECT birthdate,deathdate,death FROM xlogfile WHERE name LIKE ".$dbh->quote($nick));
@@ -2407,7 +2403,7 @@ sub do_pubcmd_streak {
 	$msg = "No games for $nick.";
     }
 
-    $self->botspeak($kernel, $msg, $channel);
+    $self->botspeak($msg, $channel);
 }
 
 sub do_pubcmd_gamenum {
@@ -2444,7 +2440,7 @@ sub do_pubcmd_gamenum {
 	    $speakstr = "No such game."
 	}
     }
-    $self->botspeak($kernel, $speakstr, $channel);
+    $self->botspeak($speakstr, $channel);
 }
 
 sub do_pubcmd_lastgame {
@@ -2452,10 +2448,10 @@ sub do_pubcmd_lastgame {
 
     if ($last_played_game) {
 	foreach $a (demunge_recordline($last_played_game, 5)) {
-	    $self->botspeak($kernel, $a, $channel);
+	    $self->botspeak($a, $channel);
 	}
     } else {
-	$self->botspeak($kernel, "I haven't seen any games yet.", $channel);
+	$self->botspeak("I haven't seen any games yet.", $channel);
     }
 }
 
@@ -2464,9 +2460,9 @@ sub do_pubcmd_scores {
     $name =~ tr/A-Z/a-z/;
     my @b = $self->highscore_query_nick($name);
     if ($b[0] =~ m/Player .* not on highscore list./i) {
-	$self->botspeak($kernel, $b[0], $channel);
+	$self->botspeak($b[0], $channel);
     } else {
-	$self->botspeak($kernel, $self->{'PublicScorePath'}.$name, $channel);
+	$self->botspeak($self->{'PublicScorePath'}.$name, $channel);
     }
 }
 
@@ -2474,7 +2470,7 @@ sub do_pubcmd_hsn {
     my ($self, $kernel, $channel, $name) = @_;
     $name =~ tr/A-Z/a-z/;
     foreach $a ($self->highscore_query_nick($name)) {
-	$self->botspeak($kernel, $a, $channel);
+	$self->botspeak($a, $channel);
     }
 }
 
@@ -2483,7 +2479,7 @@ sub do_pubcmd_players {
     my @plrs = $self->current_players();
     my $a;
     foreach $a (@plrs) {
-	$self->botspeak($kernel, $a, $channel);
+	$self->botspeak($a, $channel);
     }
 }
 
@@ -2495,10 +2491,10 @@ sub do_pubcmd_lvlfiles {
     my @files = find_files($self->{'NHLvlFiles'}, $findname);
 
     if ($#files < 0) {
-	$self->botspeak($kernel, "No level lock files for user $name", $channel);
+	$self->botspeak("No level lock files for user $name", $channel);
     } else {
 	my $nlvlfiles = $#files + 1;
-	$self->botspeak($kernel, "$name has $nlvlfiles level file". (($nlvlfiles > 1) ? "s" : ""), $channel);
+	$self->botspeak("$name has $nlvlfiles level file". (($nlvlfiles > 1) ? "s" : ""), $channel);
     }
 }
 
@@ -2510,25 +2506,25 @@ sub do_pubcmd_savefiles {
     my @files = find_files($savedir, $findname);
 
     if ($#files < 0) {
-	$self->botspeak($kernel, "No save file for user $name", $channel);
+	$self->botspeak("No save file for user $name", $channel);
     } else {
 	my $ftime = (stat($savedir.$files[0]))[9];
 	my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime($ftime);
 	my $ret = sprintf("%04d%02d%02d %02d:%02d:%02d", ($year+1900), ($mon+1), $mday, $hour,$min,$sec);
-	$self->botspeak($kernel, "$name has a save file, last updated at $ret", $channel);
+	$self->botspeak("$name has a save file, last updated at $ret", $channel);
     }
 }
 
 sub do_pubcmd_rcfile {
     my ($self, $kernel, $channel, $input) = @_;
     my $name = $self->userdata_name($input) or do {
-        $self->botspeak($kernel, "No config file for $input.", $channel);
+        $self->botspeak("No config file for $input.", $channel);
         return;
     };
 
     my %namehash = (name=>$name);
     my $rc = fixstring($self->{'userdata_rcfile_puburl'}, %namehash);
-    $self->botspeak($kernel, $rc, $channel);
+    $self->botspeak($rc, $channel);
 }
 
 sub do_pubcmd_lastlog {
@@ -2536,9 +2532,9 @@ sub do_pubcmd_lastlog {
     my $username = $name;
 
     if (my $url = $self->dumplog_url($username)) {
-       $self->botspeak($kernel, $url, $channel);
+       $self->botspeak($url, $channel);
     } else {
-       $self->botspeak($kernel, "No lastgame dump file for $username.", $channel);
+       $self->botspeak("No lastgame dump file for $username.", $channel);
     }
 }
 
@@ -2567,7 +2563,7 @@ sub priv_and_pub_msg {
     }
     elsif ( $msg =~ m/^!rn[gd]\s+(.+)$/i ) {
 # !rng, !rnd
-	$self->botspeak($kernel, rng_choice($1, 1), $channel);
+	$self->botspeak(rng_choice($1, 1), $channel);
     }
     elsif ( $msg =~ m/^!seen/i ) {
 # !seen nick
@@ -2580,19 +2576,19 @@ sub priv_and_pub_msg {
 	my $target_nick = $2;
 	my $text = $3;
 	if (lc($nick) eq lc($target_nick)) {
-	    $self->botspeak($kernel, "$nick: Tell yourself.", $channel);
+	    $self->botspeak("$nick: Tell yourself.", $channel);
 	} elsif (lc($self->{'Nick'}) eq lc($target_nick)) {
-	    $self->botspeak($kernel, "$nick: Got it.", $channel);
+	    $self->botspeak("$nick: Got it.", $channel);
 	} else {
 	    $user_messages_db->leave_message($target_nick, $nick, $text);
-	    $self->botspeak($kernel, "OK, I'll let $target_nick know.", $channel);
+	    $self->botspeak("OK, I'll let $target_nick know.", $channel);
 	}
     }
     elsif ( $msg =~ m/^!messages?\s*$/i ) {
 # !message or !messages
 	my $usrmsgs = $user_messages_db->get_messages($nick);
 	if ($usrmsgs) {
-	    $self->botspeak($kernel, $usrmsgs, $channel);
+	    $self->botspeak($usrmsgs, $channel);
 	}
     }
     elsif ($msg =~ m/^!learn\s+info\s+(.+)$/i) {
@@ -2633,7 +2629,7 @@ sub priv_and_pub_msg {
 	do_pubcmd_gamenum($self, $kernel, $channel, $gamenum, $plr);
     }
     elsif ($msg =~ m/^!grepsrc\s(.+)$/i) {
-	$self->botspeak($kernel, dogrepsrc($1), $channel);
+	$self->botspeak(dogrepsrc($1), $channel);
     }
     elsif ($msg =~ m/^!lastgame$/i) {
 # !lastgame
@@ -2683,7 +2679,7 @@ sub priv_and_pub_msg {
 		$plrs = "No players right now.";
 	    }
 	}
-	$self->botspeak($kernel, $plrs, $channel);
+	$self->botspeak($plrs, $channel);
     } 
     elsif ($msg =~ m/^!lvlfiles\s+(\S+)$/i) {
 # !lvlfiles <name>
@@ -2771,10 +2767,10 @@ sub check_messages {
     my $n_messages = $user_messages_db->have_messages($nick);
     if ($n_messages) {
 	if ($n_messages > 1) {
-	    $self->botspeak($kernel, "$nick: You have $n_messages messages. Use !messages to read them.", $channel);
+	    $self->botspeak("$nick: You have $n_messages messages. Use !messages to read them.", $channel);
 	} else {
 	    my $usrmsg = $user_messages_db->get_messages($nick);
-	    $self->botspeak($kernel, "$nick, I have a message for you: $usrmsg", $channel);
+	    $self->botspeak("$nick, I have a message for you: $usrmsg", $channel);
 	}
     }
 }
@@ -3141,10 +3137,10 @@ sub handle_learndb_trigger {
 	    my $do_me = ($l =~ m/^\x02ACT\s/) ? 1 : 0;
 	    $l =~ s/^\x02ACT\s//;
 	    if ($do_me) {
-		$self->botaction($kernel, $l, $output);
+		$self->botaction($l, $output);
 		$retval = 1;
 	    } else {
-		$self->botspeak($kernel, $l, $output);
+		$self->botspeak($l, $output);
 		$retval = 1;
 	    }
 	}
@@ -3175,14 +3171,14 @@ sub pub_msg {
 	my ($edita, $editb, $opts);
 
 	if (!can_edit_learndb($nick, $term)) {
-	    $self->botspeak($kernel, "You can't do that.", $nick);
+	    $self->botspeak("You can't do that.", $nick);
 	    return;
 	}
 
 	if (($edita, $editb, $opts) = grok_learn_edit_regex($3)) {
 	    do_pubcmd_dbedit($self,$kernel,$channel,$term,$tnum,$edita,$editb,$opts);
 	} elsif ($@) {
-	    $self->botspeak($kernel, $@, $channel);
+	    $self->botspeak($@, $channel);
 	}
     }
     elsif ($msg =~ m/^!learn\s+del\s+(\S+) *(\d?\d?)$/i) {
@@ -3192,7 +3188,7 @@ sub pub_msg {
 	my $term = $1;
 	my $num = $2;
 	if (!can_edit_learndb($nick, $term)) {
-	    $self->botspeak($kernel, "You can't do that.", $nick);
+	    $self->botspeak("You can't do that.", $nick);
 	    return;
 	}
 	do_pubcmd_dbdelete($self, $kernel, $channel, $term, $num);
@@ -3202,7 +3198,7 @@ sub pub_msg {
 	my $terma = $1;
 	my $termb = $2;
 	if (!can_edit_learndb($nick, $terma) || !can_edit_learndb($nick, $termb)) {
-	    $self->botspeak($kernel, "You can't do that.", $nick);
+	    $self->botspeak("You can't do that.", $nick);
 	    return;
 	}
 	do_pubcmd_dbswap($self, $kernel, $channel, $terma, $termb);
@@ -3212,7 +3208,7 @@ sub pub_msg {
 	my $term = $1;
 	my $def = $2;
 	if (!can_edit_learndb($nick, $term)) {
-	    $self->botspeak($kernel, "You can't do that.", $nick);
+	    $self->botspeak("You can't do that.", $nick);
 	    return;
 	}
 	do_pubcmd_dbadd($self, $kernel, $channel, $nick, $term, $def);
@@ -3267,7 +3263,7 @@ sub handle_querythread_output {
 	if (scalar(@querythread_output)) {
 	    my $str = pop(@querythread_output);
 	    my ($channel,$nick,$query) = split(/\t/, $str);
-	    $self->botspeak($kernel, "$nick: $query", $channel);
+	    $self->botspeak("$nick: $query", $channel);
 	}
     }
     $kernel->delay('handle_querythread_out' => 10);
@@ -3296,18 +3292,18 @@ sub admin_msg {
 	if ($msg =~ m/^!say\s(\S+)\s(.+)$/i) {
 	    my $chn = $1;
 	    my $sayeth = $2;
-	    $self->botspeak($kernel, $sayeth, $chn);
+	    $self->botspeak($sayeth, $chn);
 	}
 	elsif ($msg =~ m/^!wiki/) {
 	    my $ngrams = scalar (@wiki_datagram_queue);
-	    $self->botspeak($kernel, "Wiki recentchanges queue: $ngrams", $nick);
+	    $self->botspeak("Wiki recentchanges queue: $ngrams", $nick);
 	}
 	elsif ($msg =~ m/^!ignore\s(\S+ +\S.*)$/i) {
 	    my $ign = $1;
 	    $ign =~ s/ /\t/;
 	    my @ignik = (split /\t/, $ign);
 	    $ignorance->add($ign);
-	    $self->botspeak($kernel, "Now ignoring: user '".$ignik[0]."' saying '".$ignik[1]."'", $nick);
+	    $self->botspeak("Now ignoring: user '".$ignik[0]."' saying '".$ignik[1]."'", $nick);
 	}
 	elsif ($msg =~ m/^!ignore$/i) {
 	    my $a;
@@ -3316,61 +3312,61 @@ sub admin_msg {
 		for (my $cnt = 0; $cnt < $count; $cnt++) {
 		    $a = $ignorance->get_nth($cnt);
 		    my @ign = split( /\t/, $a);
-		    $self->botspeak($kernel, $cnt.": user '".$ign[0]."' saying '".$ign[1]."'", $nick);
+		    $self->botspeak($cnt.": user '".$ign[0]."' saying '".$ign[1]."'", $nick);
 		}
 	    } else {
-		    $self->botspeak($kernel, "Nothing is ignored", $nick);
+		    $self->botspeak("Nothing is ignored", $nick);
 	    }
 	}
 	elsif ($msg =~ m/^!shorten\s+(\S+)$/i) {
 	    my $urli = $1;
-	    $self->botspeak($kernel, shorten_url($urli), $nick);
+	    $self->botspeak(shorten_url($urli), $nick);
 	}
 	elsif ($msg =~ m/^!togglebuglist\s*$/i) {
 	    if ($self->{'CheckBug'} > 0) {
 		$self->{'CheckBug'} = 0;
-		$self->botspeak($kernel, "Buglist checking disabled.", $nick);
+		$self->botspeak("Buglist checking disabled.", $nick);
 	    } else {
 		$self->{'CheckBug'} = 1;
 		$kernel->delay('buglist_update' => 30);
-		$self->botspeak($kernel, "Buglist checking enabled.", $nick);
+		$self->botspeak("Buglist checking enabled.", $nick);
 	    }
 	}
 	elsif ($msg =~ m/^!togglelogfile\s*$/i) {
 	    if ($self->{'CheckLog'} > 0) {
 		$self->{'CheckLog'} = 0;
-		$self->botspeak($kernel, "Logfile checking disabled.", $nick);
+		$self->botspeak("Logfile checking disabled.", $nick);
 	    } else {
 		$self->{'CheckLog'} = 1;
 		$kernel->delay('d_tick' => 10);
-		$self->botspeak($kernel, "Logfile checking enabled.", $nick);
+		$self->botspeak("Logfile checking enabled.", $nick);
 	    }
 	}
 	elsif ($msg =~ m/^!rmignore\s(\d+)$/i) {
 	    my $ign = $1;
 	    if ($ign >= 0 && $ign < $ignorance->count()) {
 		my @a = split(/\t/, $ignorance->get_nth($ign));
-		$self->botspeak($kernel, "De-ignoring: user '".$a[0]."' saying '".$a[1]."'", $nick);
+		$self->botspeak("De-ignoring: user '".$a[0]."' saying '".$a[1]."'", $nick);
 		$ignorance->rm_nth($ign);
 	    } else {
-		$self->botspeak($kernel, "No such ignorance.", $nick);
+		$self->botspeak("No such ignorance.", $nick);
 	    }
 	}
 #	elsif ($msg =~ m/^!msg\s(.+)\s(.+)$/i) {
 #	    my $tonick = $1;
 #	    my $sayeth = $2;
-#	    $kernel->post(NICK, 'privmsg', $tonick, $sayeth);
+#	    $irc->yield('privmsg', $tonick, $sayeth);
 #	}
 	elsif ($msg =~ m/^!nick\s(.+)$/i) {
 	    my $newnik = $1;
-	    $kernel->post(NICK, 'nick', "$newnik");
+	    $irc->yield('nick', "$newnik");
 	}
 	elsif ($msg =~ m/^!join\s(\S+)$/i) {
 	    my $chn = $1;
 	    if (defined $chn && ($chn =~ m/^#/) && (!( grep {$_ eq $chn } @{$self->{'joined_channels'}} ))) {
-		$kernel->post( NICK, 'join', $chn );
+		$irc->yield('join', $chn);
 	    } else {
-		$self->botspeak($kernel, "Sorry.", $nick);
+		$self->botspeak("Sorry.", $nick);
 	    }
 	}
 	elsif ($msg =~ m/^!(leave|part)\s(\S+)$/i) {
@@ -3385,27 +3381,27 @@ sub admin_msg {
 		    }
 		    $tmpcounter++;
 		}
-		$kernel->post( NICK, 'part', $chn );
+		$irc->yield('part', $chn);
 	    } else {
-		$self->botspeak($kernel, "Sorry.", $nick);
+		$self->botspeak("Sorry.", $nick);
 	    }
 	}
 	elsif ($msg =~ m/^!me\s(\S+)\s(.+)/i) {
 	    my $chn = $1;
 	    my $message = $2;
 	    if (defined $chn && ($chn =~ m/^#/) && ( grep {$_ eq $chn } @{$self->{'joined_channels'}} )) {
-		$self->botaction($kernel, $message, $chn);
+		$self->botaction($message, $chn);
 	    } else {
-		$self->botspeak($kernel, "Sorry, $chn is not a channel i'm on.", $nick);
+		$self->botspeak("Sorry, $chn is not a channel i'm on.", $nick);
 	    }
 	}
 	elsif ($msg =~ m/^!privme\s(\S+)\s(.+)/i) {
 	    my $target = $1;
 	    my $message = $2;
-	    $self->botaction($kernel, $message, $target);
+	    $self->botaction($message, $target);
 	}
 	elsif ($msg =~ m/^!throttle$/i) {
-	    $self->botspeak($kernel, "Throttle,  priv: $privmsg_throttle, pub: $pubmsg_throttle", $nick);
+	    $self->botspeak("Throttle,  priv: $privmsg_throttle, pub: $pubmsg_throttle", $nick);
 	}
 	elsif ($msg =~ m/^!bones$/i) {
 	    my $bonefiledir = $self->{'NHLvlFiles'};
@@ -3416,34 +3412,34 @@ sub admin_msg {
 	    	foreach $a (@bonefiles) {
 		    $a =~ s/$bonefiledir\///;
 		    $a =~ s/\t//g;
-		    $self->botspeak($kernel, $a, $nick);
+		    $self->botspeak($a, $nick);
 	     	}
 	    } else {
-		$self->botspeak($kernel, "No bones.", $nick);
+		$self->botspeak("No bones.", $nick);
 	    }
 	}
 	elsif ($msg =~ m/^!throttle\s(\d+)\s(\d+)$/i) {
 	    $privmsg_throttle = $1;
 	    $pubmsg_throttle = $2;
-	    $self->botspeak($kernel, "Throttle,  priv: $privmsg_throttle, pub: $pubmsg_throttle", $nick);
+	    $self->botspeak("Throttle,  priv: $privmsg_throttle, pub: $pubmsg_throttle", $nick);
 	}
 	elsif ($msg =~ m/^!deid$/i) {
 	    $admin_nicks->nick_deidentify($nick);
 	    if ((defined $send_msg_id) && ($send_msg_id eq $nick)) {
 		undef $send_msg_id;
 	    }
-	    $self->botspeak($kernel, "De-identified. Bye.", $nick);
+	    $self->botspeak("De-identified. Bye.", $nick);
 	}
 	elsif ($msg =~ m/^!id$/i) {
-	    $self->botspeak($kernel, "Identified nicks: ". $admin_nicks->get_identified_nicks(), $nick);
+	    $self->botspeak("Identified nicks: ". $admin_nicks->get_identified_nicks(), $nick);
 	}
 	elsif ($msg =~ m/^!parsestr\s(.+)$/) {
 	    my $b = $self->parse_strvariables($nick, $nick, $parsestr_cmd_args, $1);
-	    $self->botspeak($kernel, "parsed as: \"".$b."\"", $nick);
+	    $self->botspeak("parsed as: \"".$b."\"", $nick);
 	}
 	elsif ($msg =~ m/^!parseargs(.*)?$/) {
 	    $parsestr_cmd_args = paramstr_trim($1) if ($1);
-	    $self->botspeak($kernel, "command arguments for !parsestr: \"".$parsestr_cmd_args."\"", $nick);
+	    $self->botspeak("command arguments for !parsestr: \"".$parsestr_cmd_args."\"", $nick);
 	}
 	elsif ($msg =~ m/^!trigger\s+(\S+)\s+(\S.*)$/) {
 	    my $chn = $1;
@@ -3452,23 +3448,23 @@ sub admin_msg {
 	}
 	elsif ($msg =~ m/^!showmsg$/i) {
 	    if ((defined $send_msg_id) && ($send_msg_id eq $nick)) {
-		$self->botspeak($kernel, "Not showing bot privmsgs anymore.", $nick);
+		$self->botspeak("Not showing bot privmsgs anymore.", $nick);
 		undef $send_msg_id;
 	    } else {
 		if (defined $send_msg_id) {
-		    $self->botspeak($kernel, "Showing privmsgs to $nick now, sorry.", $send_msg_id);
-		    $self->botspeak($kernel, "Privmsgs were shown to $send_msg_id.", $nick);
+		    $self->botspeak("Showing privmsgs to $nick now, sorry.", $send_msg_id);
+		    $self->botspeak("Privmsgs were shown to $send_msg_id.", $nick);
 		}
 		$send_msg_id = $nick;
-		$self->botspeak($kernel, "Showing privmsgs to you.", $nick);
+		$self->botspeak("Showing privmsgs to you.", $nick);
 	    }
 	}
 	elsif ($msg =~ m/^!die(\s.+)?$/i) {
-	    $self->botspeak($kernel, paramstr_trim($1)) if ($1);
+	    $self->botspeak(paramstr_trim($1)) if ($1);
 	    kill_bot();
 	}
 	elsif ($msg =~ m/^!help$/i) {
-	    $self->botspeak($kernel, "Command help: " . $self->{'admin_help_url'}, $nick);
+	    $self->botspeak("Command help: " . $self->{'admin_help_url'}, $nick);
 	} else {
 	    pub_msg($self, $kernel, $nick, $nick, $msg);
 	}
@@ -3495,7 +3491,7 @@ sub on_msg {
     if ($msg =~ m/^!decode\s(.+)$/i) {
 # !decode <recordline>
 	my $line = $1;
-	$self->botspeak($kernel, demunge_recordline($line, 9), $nick);
+	$self->botspeak(demunge_recordline($line, 9), $nick);
     }
     elsif (priv_and_pub_msg($self, $kernel, $nick, $nick, $msg) == 0) {
 #	handled in priv_and_pub_msg
@@ -3506,12 +3502,12 @@ sub on_msg {
 	if (!$admin_nicks->is_identified($nick)) {
 	    if ($pw eq $self->{'Apass'}) {
 		$admin_nicks->nick_identify($nick);
-		$self->botspeak($kernel, "Hello, $nick", $nick);
+		$self->botspeak("Hello, $nick", $nick);
 		if (!(defined $send_msg_id)) {
-		    $self->botspeak($kernel, "Sending bot privmsgs to you.", $nick);
+		    $self->botspeak("Sending bot privmsgs to you.", $nick);
 		    $send_msg_id = $nick;
 		} else {
-		    $self->botspeak($kernel, "Bot privmsgs are sent to $send_msg_id.", $nick);
+		    $self->botspeak("Bot privmsgs are sent to $send_msg_id.", $nick);
 		}
 	    }
 	}
@@ -3527,7 +3523,7 @@ sub on_dcc_req {
     my ( $self, $kernel, $type, $who, $id ) =
       @_[ OBJECT, KERNEL, ARG0, ARG1, ARG3 ];
 
-    $kernel->post( NICK, 'dcc_accept', $id );
+    $irc->yield('dcc_accept', $id);
 }
 
 # Start up the DCC session, or welcome back
@@ -3616,10 +3612,10 @@ sub handle_wiki_datagrams {
         $message = mangle_wiki_datagram_msg($data->{"message"});
 	return if ($message =~ m/^..Special.Log.patrol/);
         if ($ngrams > 1) {
-            $self->botspeak($kernel, "$ngrams changes, newest is: $message", $chn) if ($message ne "");
+            $self->botspeak("$ngrams changes, newest is: $message", $chn) if ($message ne "");
             @wiki_datagram_queue = ();
         } elsif ($ngrams > 0) {
-            $self->botspeak($kernel, "$message", $chn) if ($message ne "");
+            $self->botspeak("$message", $chn) if ($message ne "");
         }
     }
 }
