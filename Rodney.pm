@@ -1569,7 +1569,7 @@ sub on_connect {
 # Someone pinged us, handle it.
 sub on_ping {
 
-    my ( $self, $kernel, $who ) = @_[ OBJECT, KERNEL, ARG0 ];
+    my ( $self, $who ) = @_[ OBJECT, ARG0 ];
     my $nick = ( split /!/, $who )[0];
     $irc->yield('ctcpreply', $nick, "PING", "PONG");
     $self->bot_priv_msg("PING from $nick");
@@ -1577,7 +1577,7 @@ sub on_ping {
 
 # Someone changed their nick, handle it.
 sub on_nick {
-    my ( $self, $kernel, $who, $nnick ) = @_[ OBJECT, KERNEL, ARG0, ARG1 ];
+    my ( $self, $who, $nnick ) = @_[ OBJECT, ARG0, ARG1 ];
     my $nick = ( split /!/, $who )[0];
     $nick =~ tr/A-Z/a-z/;
     $seen_db->seen_log($nick, "changed nick to $nnick");
@@ -1589,7 +1589,7 @@ sub on_nick {
 # Handle CTCP Version
 sub on_ver {
 
-    my ( $self, $kernel, $who ) = @_[ OBJECT, KERNEL, ARG0 ];
+    my ( $self, $who ) = @_[ OBJECT, ARG0 ];
     my $nick = ( split /!/, $who )[0];
     $irc->yield('ctcpreply', $nick, "VERSION", "Oh no, $self->{'Nick'}'s using the touch of death!");
     $self->bot_priv_msg("CTCP VERSION from $nick");
@@ -1598,7 +1598,7 @@ sub on_ver {
 # Handle CTCP Finger
 sub on_finger {
 
-    my ( $self, $kernel, $who ) = @_[ OBJECT, KERNEL, ARG0 ];
+    my ( $self, $who ) = @_[ OBJECT, ARG0 ];
     my $nick = ( split /!/, $who )[0];
     $irc->yield('ctcpreply', $nick, "FINGER", "Oh no, $self->{'Nick'}'s using the touch of death!");
     $self->bot_priv_msg("CTCP FINGER from $nick");
@@ -1607,7 +1607,7 @@ sub on_finger {
 # Handle CTCP Page
 sub on_page {
 
-    my ( $self, $kernel, $who ) = @_[ OBJECT, KERNEL, ARG0 ];
+    my ( $self, $who ) = @_[ OBJECT, ARG0 ];
     my $nick = ( split /!/, $who )[0];
     $irc->yield('ctcpreply', $nick, "PAGE", "Oh no, $self->{'Nick'}'s using the touch of death!");
     $self->bot_priv_msg("CTCP PAGE from $nick");
@@ -1616,7 +1616,7 @@ sub on_page {
 # Handle CTCP Time
 sub on_time {
 
-    my ( $self, $kernel, $who ) = @_[ OBJECT, KERNEL, ARG0 ];
+    my ( $self, $who ) = @_[ OBJECT, ARG0 ];
     my $nick = ( split /!/, $who )[0];
     my $ts = scalar(localtime);
     $irc->yield('ctcpreply', $nick, "TIME", $ts );
@@ -1636,8 +1636,7 @@ sub mangle_msg_for_trigger {
 
 # Log actions
 sub on_action {
-    my ( $self, $kernel, $who, $where, $msg ) =
-      @_[ OBJECT, KERNEL, ARG0, ARG1, ARG2 ];
+    my ( $self, $who, $where, $msg ) = @_[ OBJECT, ARG0, ARG1, ARG2 ];
 
     my $nick = ( split /!/, $who )[0];
     my $channel = $where->[0];
@@ -1651,13 +1650,12 @@ sub on_action {
     $msg = $self->mangle_msg_for_trigger($msg);
 # eg. "paxed kicks Rodney" -> "$act_kicks_$self"
 
-    $self->handle_learndb_trigger($kernel, $channel, $nick, '$act_'.$msg);
+    $self->handle_learndb_trigger($channel, $nick, '$act_'.$msg);
 }
 
 # Handle mode changes
 sub on_mode {
-    my ( $self, $kernel, $who, $where, $mode, $nicks ) =
-      @_[ OBJECT, KERNEL, ARG0, ARG1, ARG2, ARG3 ];
+    my ( $self, $who, $where, $mode, $nicks ) = @_[ OBJECT, ARG0, ARG1, ARG2, ARG3 ];
 
     my $nick = ( split /!/, $who )[0];
     my $time = localtime( time() );
@@ -1668,7 +1666,7 @@ sub on_mode {
 
 # Handle notices
 sub on_notice {
-    my ( $self, $kernel, $who, $msg ) = @_[ OBJECT, KERNEL, ARG0, ARG2 ];
+    my ( $self, $who, $msg ) = @_[ OBJECT, ARG0, ARG2 ];
 
     my $nick = ( split /!/, $who )[0];
     my $time = localtime( time() );
@@ -1679,8 +1677,7 @@ sub on_notice {
 
 # Handle kicks
 sub on_kick {
-    my ( $self, $kernel, $who, $chan, $kickee, $msg ) =
-      @_[ OBJECT, KERNEL, ARG0, ARG1, ARG2, ARG3 ];
+    my ( $self, $who, $chan, $kickee, $msg ) = @_[ OBJECT, ARG0, ARG1, ARG2, ARG3 ];
 
     my $nick = ( split /!/, $who )[0];
     my $time = localtime( time() );
@@ -1691,7 +1688,7 @@ sub on_kick {
 
 # Handle someone quitting.
 sub on_quit {
-    my ( $self, $kernel, $who, $msg ) = @_[ OBJECT, KERNEL, ARG0, ARG1 ];
+    my ( $self, $who, $msg ) = @_[ OBJECT, ARG0, ARG1 ];
 
     my $nick = ( split /!/, $who )[0];
     my $time = localtime( time() );
@@ -1703,7 +1700,7 @@ sub on_quit {
 
 # Handle join event
 sub on_join {
-    my ( $self, $kernel, $who, $where ) = @_[ OBJECT, KERNEL, ARG0, ARG1 ];
+    my ( $self, $who, $where ) = @_[ OBJECT, ARG0, ARG1 ];
 
     my $irc = $_[SENDER]->get_heap();
 
@@ -1722,7 +1719,7 @@ sub on_join {
 
 # Handle part event
 sub on_part {
-    my ( $self, $kernel, $who, $where ) = @_[ OBJECT, KERNEL, ARG0, ARG1 ];
+    my ( $self, $who, $where ) = @_[ OBJECT, ARG0, ARG1 ];
 
     print "on_part\n";
 
@@ -1736,7 +1733,7 @@ sub on_part {
 
 # Changes nick if current nick is taken
 sub on_nick_taken {
-    my ( $self, $kernel ) = @_[ OBJECT, KERNEL ];
+    my ( $self ) = $_[ OBJECT ];
 
     print "on_nick_taken\n";
 
@@ -2045,7 +2042,7 @@ sub do_sqlquery_xlogfile {
 }
 
 sub cancel_xlogfile_query {
-    my ($self, $kernel, $channel, $nick) = @_;
+    my ($self, $channel, $nick) = @_;
 
     lock($querythread_input);
 
@@ -2066,7 +2063,7 @@ sub cancel_xlogfile_query {
 }
 
 sub do_pubcmd_query_xlogfile {
-    my ($self, $kernel, $channel, $nick, $query) = @_;
+    my ($self, $channel, $nick, $query) = @_;
 
     my $nqueue = $querythread_input->pending();
     while ($nqueue > 0) {
@@ -2088,12 +2085,12 @@ sub do_pubcmd_query_xlogfile {
 }
 
 sub do_pubcmd_version {
-    my ($self, $kernel, $channel) = @_;
+    my ($self, $channel) = @_;
     $self->botspeak($self->{'Version'}, $channel);
 }
 
 sub do_pubcmd_seen {
-    my ($self, $kernel, $channel, $nick, $name) = @_;
+    my ($self, $channel, $nick, $name) = @_;
     if ($name) {
 	$name =~ tr/A-Z/a-z/;
 	my $fseen = $seen_db->seen_get($name) || undef;
@@ -2119,7 +2116,7 @@ sub do_pubcmd_seen {
 }
 
 sub do_pubcmd_dbquery {
-    my ($self, $kernel, $channel, $tonickchan, $nick, $query) = @_;
+    my ($self, $channel, $tonickchan, $nick, $query) = @_;
 
     my @a;
     my $term_no;
@@ -2187,7 +2184,7 @@ sub do_pubcmd_dbquery {
 }
 
 sub do_pubcmd_dbsearch {
-    my ($self, $kernel, $channel, $tonickchan, $nick, $query) = @_;
+    my ($self, $channel, $tonickchan, $nick, $query) = @_;
 
     my @a;
     my $error;
@@ -2224,7 +2221,7 @@ sub do_pubcmd_dbsearch {
 }
 
 sub do_pubcmd_dbinfo {
-    my ($self, $kernel, $channel, $query) = @_;
+    my ($self, $channel, $query) = @_;
     my $a;
     foreach $a ($learn_db->info($query)) {
 	$self->botspeak($a, $channel);
@@ -2232,7 +2229,7 @@ sub do_pubcmd_dbinfo {
 }
 
 sub do_pubcmd_dbedit {
-    my ($self, $kernel, $channel, $term, $tnum, $edita, $editb, $opts) = @_;
+    my ($self, $channel, $term, $tnum, $edita, $editb, $opts) = @_;
 
     $tnum =~ s/ //g if (defined $tnum);
 
@@ -2252,7 +2249,7 @@ sub do_pubcmd_dbedit {
 }
 
 sub do_pubcmd_dbdelete {
-    my ($self, $kernel, $channel, $term, $num) = @_;
+    my ($self, $channel, $term, $num) = @_;
     # requested just one term, with foo[N]
     if (!$num && ($term =~ /(.+)\[(\d+)\]$/)) {
 	$term = $1;
@@ -2266,7 +2263,7 @@ sub do_pubcmd_dbdelete {
 }
 
 sub do_pubcmd_dbswap {
-    my ($self, $kernel, $channel, $terma, $termb) = @_;
+    my ($self, $channel, $terma, $termb) = @_;
     my $terman = 1;
     my $termbn = 1;
     my $a;
@@ -2286,7 +2283,7 @@ sub do_pubcmd_dbswap {
 }
 
 sub do_pubcmd_dbdebug {
-    my ($self, $kernel, $channel) = @_;
+    my ($self, $channel) = @_;
     my $a;
 
     foreach $a ($learn_db->debug()) {
@@ -2295,7 +2292,7 @@ sub do_pubcmd_dbdebug {
 }
 
 sub do_pubcmd_dbadd {
-    my ($self, $kernel, $channel, $nick, $term, $def) = @_;
+    my ($self, $channel, $nick, $term, $def) = @_;
     my $a;
 
     foreach $a ($learn_db->add($term,$nick,$def)) {
@@ -2305,7 +2302,7 @@ sub do_pubcmd_dbadd {
 
 
 sub do_pubcmd_bugs {
-    my ($self, $kernel, $channel, $bugid) = @_;
+    my ($self, $channel, $bugid) = @_;
 
     my $bugs = $buglist_db->search_bugs($bugid);
     if ($bugs) {
@@ -2314,21 +2311,21 @@ sub do_pubcmd_bugs {
 }
 
 sub do_pubcmd_gamesby {
-    my ($self, $kernel, $channel, $name) = @_;
+    my ($self, $channel, $name) = @_;
     $name =~ tr/A-Z/a-z/;
     my $a = $self->log_data($name);
     $self->botspeak($a, $channel);
 }
 
 sub do_pubcmd_ascensions {
-    my ($self, $kernel, $channel, $name) = @_;
+    my ($self, $channel, $name) = @_;
     $name =~ tr/A-Z/a-z/;
     my $a = $self->asc_data($name);
     $self->botspeak($a, $channel);
 }
 
 sub do_pubcmd_streak {
-    my ($self, $kernel, $channel, $nick) = @_;
+    my ($self, $channel, $nick) = @_;
     $nick =~ tr/A-Z/a-z/;
 
     my $longstreak = 0;
@@ -2407,7 +2404,7 @@ sub do_pubcmd_streak {
 }
 
 sub do_pubcmd_gamenum {
-    my ($self, $kernel, $channel, $gamenum, $name) = @_;
+    my ($self, $channel, $gamenum, $name) = @_;
     $name =~ tr/A-Z/a-z/ if (defined $name);
 
     my $speakstr;
@@ -2444,7 +2441,7 @@ sub do_pubcmd_gamenum {
 }
 
 sub do_pubcmd_lastgame {
-    my ($self, $kernel, $channel) = @_;
+    my ($self, $channel) = @_;
 
     if ($last_played_game) {
 	foreach $a (demunge_recordline($last_played_game, 5)) {
@@ -2456,7 +2453,7 @@ sub do_pubcmd_lastgame {
 }
 
 sub do_pubcmd_scores {
-    my ($self, $kernel, $channel, $name) = @_;
+    my ($self, $channel, $name) = @_;
     $name =~ tr/A-Z/a-z/;
     my @b = $self->highscore_query_nick($name);
     if ($b[0] =~ m/Player .* not on highscore list./i) {
@@ -2467,7 +2464,7 @@ sub do_pubcmd_scores {
 }
 
 sub do_pubcmd_hsn {
-    my ($self, $kernel, $channel, $name) = @_;
+    my ($self, $channel, $name) = @_;
     $name =~ tr/A-Z/a-z/;
     foreach $a ($self->highscore_query_nick($name)) {
 	$self->botspeak($a, $channel);
@@ -2475,7 +2472,7 @@ sub do_pubcmd_hsn {
 }
 
 sub do_pubcmd_players {
-    my ($self, $kernel, $channel,$nick) = @_;
+    my ($self, $channel,$nick) = @_;
     my @plrs = $self->current_players();
     my $a;
     foreach $a (@plrs) {
@@ -2485,7 +2482,7 @@ sub do_pubcmd_players {
 
 
 sub do_pubcmd_lvlfiles {
-    my ($self, $kernel, $channel, $name) = @_;
+    my ($self, $channel, $name) = @_;
     my $username = $name;
     my $findname = '^5'.$username.'\.[0-9]+$';
     my @files = find_files($self->{'NHLvlFiles'}, $findname);
@@ -2499,7 +2496,7 @@ sub do_pubcmd_lvlfiles {
 }
 
 sub do_pubcmd_savefiles {
-    my ($self, $kernel, $channel, $name) = @_;
+    my ($self, $channel, $name) = @_;
     my $username = $name;
     my $findname = '^5'.$username.'\.gz$';
     my $savedir = $self->{'nh_savefiledir'};
@@ -2516,7 +2513,7 @@ sub do_pubcmd_savefiles {
 }
 
 sub do_pubcmd_rcfile {
-    my ($self, $kernel, $channel, $input) = @_;
+    my ($self, $channel, $input) = @_;
     my $name = $self->userdata_name($input) or do {
         $self->botspeak("No config file for $input.", $channel);
         return;
@@ -2528,7 +2525,7 @@ sub do_pubcmd_rcfile {
 }
 
 sub do_pubcmd_lastlog {
-    my ($self, $kernel, $channel, $name) = @_;
+    my ($self, $channel, $name) = @_;
     my $username = $name;
 
     if (my $url = $self->dumplog_url($username)) {
@@ -2540,7 +2537,7 @@ sub do_pubcmd_lastlog {
 
 # Common commands for both privmsg and public
 sub priv_and_pub_msg {
-    my ( $self, $kernel, $channel, $nick, $msg ) = @_;
+    my ( $self, $channel, $nick, $msg ) = @_;
 
     if ($msg =~ m/^!lg\s+-?-cancel/i ||
 	$msg =~ m/^!lg\s+-?-rm/i ||
@@ -2548,18 +2545,18 @@ sub priv_and_pub_msg {
 	$msg =~ m/^!rmlg\s*$/i) {
 # !lg --cancel *
 # !rmlg *
-	cancel_xlogfile_query($self, $kernel, $channel, $nick);
+	$self->cancel_xlogfile_query($channel, $nick);
     }
     elsif ($msg =~ m/^!lg\s+(.+)\s*$/i) {
 # !lg *
-	do_pubcmd_query_xlogfile($self, $kernel, $channel, $nick, $1);
+	$self->do_pubcmd_query_xlogfile($channel, $nick, $1);
     }
     elsif ($msg =~ m/^!lg\s*$/i) {
-	do_pubcmd_query_xlogfile($self, $kernel, $channel, $nick, $nick);
+	$self->do_pubcmd_query_xlogfile($channel, $nick, $nick);
     }
     elsif ( $msg =~ m/^!version$/i ) {
 # !version
-	do_pubcmd_version($self, $kernel, $channel);
+	$self->do_pubcmd_version($channel);
     }
     elsif ( $msg =~ m/^!rn[gd]\s+(.+)$/i ) {
 # !rng, !rnd
@@ -2569,7 +2566,7 @@ sub priv_and_pub_msg {
 # !seen nick
         my @arg = split ( / /, $msg );
         my $name = $arg[1];
-	do_pubcmd_seen($self,$kernel,$channel,$nick,$name);
+	$self->do_pubcmd_seen($channel,$nick,$name);
     }
     elsif ( $msg =~ m/^!(message|tell)\s+(\S+)\s+(\S.+)$/i ) {
 # !message nick text
@@ -2595,69 +2592,69 @@ sub priv_and_pub_msg {
 # !learn info foo
         my $term = $1;
 	$term =~ s/ /_/g;
-	do_pubcmd_dbinfo($self,$kernel,$channel,$term);
+	$self->do_pubcmd_dbinfo($channel,$term);
     }
     elsif ($msg =~ m/^!games(?:by)?\s(\S+)\s*$/i) {
 # !gamesby <name>
 	my $plr = $1;
-	do_pubcmd_gamesby($self,$kernel,$channel, $plr);
+	$self->do_pubcmd_gamesby($channel, $plr);
     }
     elsif ($msg =~ m/^!games(?:by)?\s*$/i) {
 # !gamesby
-	do_pubcmd_gamesby($self,$kernel,$channel,$nick);
+	$self->do_pubcmd_gamesby($channel,$nick);
     }
     elsif ($msg =~ m/^!streak(\s+\S+\s*)?$/) {
 # !streak <name>
 	my $plr = $1 || $nick;
 	$plr =~ s/^\s+//;
-	do_pubcmd_streak($self, $kernel, $channel, $plr);
+	$self->do_pubcmd_streak($channel, $plr);
     }
     elsif ($msg =~ m/^!asc(?:ensions?)?\s+(\S+)\s*$/i) {
 # !ascension <name>
 # !ascensions <name>
 	my $plr = $1;
-	do_pubcmd_ascensions($self,$kernel,$channel, $plr);
+	$self->do_pubcmd_ascensions($channel, $plr);
     }
     elsif ($msg =~ m/^!asc(?:ensions?)?\s*$/i) {
 # !ascension
 # !ascensions
-	do_pubcmd_ascensions($self,$kernel,$channel,$nick);
+	$self->do_pubcmd_ascensions($channel,$nick);
     }
     elsif ($msg =~ m/^!gamenum\s+(-?\d+)\s*(\S*)\s*$/i) {
 	my $gamenum = $1;
 	my $plr = $2 || undef;
-	do_pubcmd_gamenum($self, $kernel, $channel, $gamenum, $plr);
+	$self->do_pubcmd_gamenum($channel, $gamenum, $plr);
     }
     elsif ($msg =~ m/^!grepsrc\s(.+)$/i) {
 	$self->botspeak(dogrepsrc($1), $channel);
     }
     elsif ($msg =~ m/^!lastgame$/i) {
 # !lastgame
-	do_pubcmd_lastgame($self, $kernel, $channel);
+	$self->do_pubcmd_lastgame($channel);
     }
     elsif ($msg =~ m/^!scores?\s+(\S+)\s*$/i) {
 # !scores <name>
 	my $plr = $1;
-	do_pubcmd_scores($self,$kernel,$channel,$plr);
+	$self->do_pubcmd_scores($channel,$plr);
     }
     elsif ($msg =~ m/^!scores\s*$/i) {
 # !scores
-	do_pubcmd_scores($self,$kernel,$channel,$nick);
+	$self->do_pubcmd_scores($channel,$nick);
     }
     elsif ($msg =~ m/^!hsn\s+(\S+)\s*$/i) {
 # !hsn <name>
 # !hsn #<number>
 	my $plr = $1;
-	do_pubcmd_hsn($self,$kernel,$channel,$plr);
+	$self->do_pubcmd_hsn($channel,$plr);
     }
     elsif ($msg =~ m/^!hsn\s*$/i) {
 # !hsn
-	do_pubcmd_hsn($self,$kernel,$channel,$nick);
+	$self->do_pubcmd_hsn($channel,$nick);
     }
     elsif ($msg =~ m/^!players?\s*$/i) {
 # !player
 # !players
-	do_pubcmd_players($self,$kernel,$channel,$nick);
+	$self->do_pubcmd_players($channel,$nick);
     }
     elsif ($msg =~ m/^!whereis\s*(\S+)?$/i) {
 # !whereis
@@ -2680,36 +2677,36 @@ sub priv_and_pub_msg {
 	    }
 	}
 	$self->botspeak($plrs, $channel);
-    } 
+    }
     elsif ($msg =~ m/^!lvlfiles\s+(\S+)$/i) {
 # !lvlfiles <name>
-	do_pubcmd_lvlfiles($self,$kernel,$channel, $1);
+	$self->do_pubcmd_lvlfiles($channel, $1);
     }
     elsif ($msg =~ m/^!lvlfiles\s*$/i) {
 # !lvlfiles
-	do_pubcmd_lvlfiles($self,$kernel,$channel, $nick);
+	$self->do_pubcmd_lvlfiles($channel, $nick);
     }
     elsif ($msg =~ m/^!save\s+(\S+)$/i) {
 # !save <name>
-	do_pubcmd_savefiles($self,$kernel,$channel, $1);
+	$self->do_pubcmd_savefiles($channel, $1);
     }
     elsif ($msg =~ m/^!save\s*$/i) {
 # !save
-	do_pubcmd_savefiles($self,$kernel,$channel, $nick);
+	$self->do_pubcmd_savefiles($channel, $nick);
     }
     elsif (($msg =~ m/^!rc(?:file)?\s+(\S+)/i) ||
 	   ($msg =~ m/^!nethackrc\s+(\S+)/i)) {
 # !rc <name>
 # !rcfile <name>
 # !nethackrc <name>
-	do_pubcmd_rcfile($self,$kernel,$channel, $1);
+	$self->do_pubcmd_rcfile($channel, $1);
     }
     elsif (($msg =~ m/^!rc(?:file)?\s*/i) ||
 	   ($msg =~ m/^!nethackrc\s*/i)) {
 # !rc
 # !rcfile
 # !nethackrc
-	do_pubcmd_rcfile($self,$kernel,$channel, $nick);
+	$self->do_pubcmd_rcfile($channel, $nick);
     }
     elsif (($msg =~ m/^!dump(?:log)?\s+(\S+)/i) ||
 	   ($msg =~ m/^!lastlog\s+(\S+)/i) ||
@@ -2717,32 +2714,32 @@ sub priv_and_pub_msg {
 # !dumplog <name>
 # !lastlog <name>
 # !lastgame <name>
-	do_pubcmd_lastlog($self,$kernel,$channel,$1);
+	$self->do_pubcmd_lastlog($channel,$1);
     }
     elsif (($msg =~ m/^!dump(?:log)?\s*/i) ||
 	   ($msg =~ m/^!lastlog\s*/i)) {
 # !dumplog
 # !lastlog
-	do_pubcmd_lastlog($self,$kernel,$channel,$nick);
+	$self->do_pubcmd_lastlog($channel,$nick);
     }
     elsif ($msg =~ m/^!bugs?\s*(.*)$/i) {
 # !bug
 # !bugs
 	my $bugid = $1 || "";
-	do_pubcmd_bugs($self,$kernel,$channel, $bugid);
+	$self->do_pubcmd_bugs($channel, $bugid);
     }
     elsif ($msg =~ m/^!learn\s+debug$/i ||
            $msg =~ m/^!learn\s+info$/i) {
 # !learn debug
 # !learn info
-	do_pubcmd_dbdebug($self,$kernel,$channel);
+	$self->do_pubcmd_dbdebug($channel);
     }
     elsif ( $msg =~ m/^(\*[\*\>\<])\s*(.+)/i ) {
 # *> foo
 # ** foo
 	my $tonickchan = $1;
 	my $query = $2;
-	do_pubcmd_dbsearch($self,$kernel,$channel,$tonickchan,$nick,$query);
+	$self->do_pubcmd_dbsearch($channel,$tonickchan,$nick,$query);
     }
     elsif (($msg =~ m/^(\?[\?\>\<])\s*(.+)$/i)) {
 # ?> foo
@@ -2755,7 +2752,7 @@ sub priv_and_pub_msg {
 	if ($tonickchan =~ m/^\!/i) {
 	    $tonickchan = '?>';
 	}
-	do_pubcmd_dbquery($self,$kernel,$channel,$tonickchan,$nick,$2);
+	$self->do_pubcmd_dbquery($channel,$tonickchan,$nick,$2);
     } else {
 	return 1;
     }
@@ -2763,7 +2760,7 @@ sub priv_and_pub_msg {
 }
 
 sub check_messages {
-    my ($self, $kernel, $nick, $channel) = @_;
+    my ($self, $nick, $channel) = @_;
     my $n_messages = $user_messages_db->have_messages($nick);
     if ($n_messages) {
 	if ($n_messages > 1) {
@@ -3111,7 +3108,7 @@ sub parse_strvariables {
 }
 
 sub handle_learndb_trigger {
-    my ( $self, $kernel, $channel, $nick, $cmdargs, $output) = @_;
+    my ( $self, $channel, $nick, $cmdargs, $output) = @_;
 
     my @arglist = split(/ /, $cmdargs);
     my $term = $channel.":".(@arglist ? $arglist[0] : $cmdargs);
@@ -3151,7 +3148,7 @@ sub handle_learndb_trigger {
 
 # Commands for public
 sub pub_msg {
-    my ( $self, $kernel, $channel, $nick, $msg ) = @_;
+    my ( $self, $channel, $nick, $msg ) = @_;
 
     my $nickmatch = 0;
 
@@ -3176,7 +3173,7 @@ sub pub_msg {
 	}
 
 	if (($edita, $editb, $opts) = grok_learn_edit_regex($3)) {
-	    do_pubcmd_dbedit($self,$kernel,$channel,$term,$tnum,$edita,$editb,$opts);
+	    $self->do_pubcmd_dbedit($channel,$term,$tnum,$edita,$editb,$opts);
 	} elsif ($@) {
 	    $self->botspeak($@, $channel);
 	}
@@ -3191,7 +3188,7 @@ sub pub_msg {
 	    $self->botspeak("You can't do that.", $nick);
 	    return;
 	}
-	do_pubcmd_dbdelete($self, $kernel, $channel, $term, $num);
+	$self->do_pubcmd_dbdelete($channel, $term, $num);
     }
     elsif ($msg =~ m/^!learn\s+swap\s+(\S+)\s+(\S+)$/i) {
 # !learn swap foo[N] bar[M]
@@ -3201,7 +3198,7 @@ sub pub_msg {
 	    $self->botspeak("You can't do that.", $nick);
 	    return;
 	}
-	do_pubcmd_dbswap($self, $kernel, $channel, $terma, $termb);
+	$self->do_pubcmd_dbswap($channel, $terma, $termb);
     }
     elsif ($msg =~ m/^!learn\s+add\s+(\S+)\s+(.+)$/i) {
 # !learn add foo bar
@@ -3211,14 +3208,14 @@ sub pub_msg {
 	    $self->botspeak("You can't do that.", $nick);
 	    return;
 	}
-	do_pubcmd_dbadd($self, $kernel, $channel, $nick, $term, $def);
-    } elsif ((priv_and_pub_msg($self, $kernel, $channel, $nick, $msg) == 1) &&
+	$self->do_pubcmd_dbadd($channel, $nick, $term, $def);
+    } elsif (($self->priv_and_pub_msg($channel, $nick, $msg) == 1) &&
 	     ($msg =~ m/^\s*(\S.+)$/i)) {
 	my $trigmsg = $1;
-	if (!($self->handle_learndb_trigger($kernel, $channel, $nick, $trigmsg))) {
+	if (!($self->handle_learndb_trigger($channel, $nick, $trigmsg))) {
 	    $trigmsg = $self->mangle_msg_for_trigger($trigmsg);
 	    $trigmsg = "\$self_".$trigmsg if ($nickmatch);
-	    $self->handle_learndb_trigger($kernel, $channel, $nick, $trigmsg);
+	    $self->handle_learndb_trigger($channel, $nick, $trigmsg);
 	}
 
     }
@@ -3229,8 +3226,7 @@ sub pub_msg {
 # Handle public events
 sub on_public {
 
-    my ( $self, $kernel, $who, $where, $msg ) =
-      @_[ OBJECT, KERNEL, ARG0 .. $#_ ];
+    my ( $self, $who, $where, $msg ) = @_[ OBJECT, ARG0 .. $#_ ];
     my $nick = ( split /!/, $who )[0];
     my $channel = $where->[0];
     my $pubmsg  = $msg;
@@ -3245,14 +3241,14 @@ sub on_public {
 
     return if (grep {$_ eq lc($channel)} $self->{'ignored_channels'});
 
-    check_messages($self, $kernel, $nick, $channel);
+    $self->check_messages($nick, $channel);
 
     if ($ignorance->is_ignored($who, $msg)) {
 	$self->bot_priv_msg("[ignored] <$nick> $msg");
 	return;
     }
 
-    pub_msg($self, $kernel, $channel, $nick, $msg);
+    $self->pub_msg($channel, $nick, $msg);
 }
 
 sub handle_querythread_output {
@@ -3444,7 +3440,7 @@ sub admin_msg {
 	elsif ($msg =~ m/^!trigger\s+(\S+)\s+(\S.*)$/) {
 	    my $chn = $1;
 	    my $args = $2;
-	    $self->handle_learndb_trigger($kernel, $chn, $nick, $args, $nick);
+	    $self->handle_learndb_trigger($chn, $nick, $args, $nick);
 	}
 	elsif ($msg =~ m/^!showmsg$/i) {
 	    if ((defined $send_msg_id) && ($send_msg_id eq $nick)) {
@@ -3466,7 +3462,7 @@ sub admin_msg {
 	elsif ($msg =~ m/^!help$/i) {
 	    $self->botspeak("Command help: " . $self->{'admin_help_url'}, $nick);
 	} else {
-	    pub_msg($self, $kernel, $nick, $nick, $msg);
+	    $self->pub_msg($nick, $nick, $msg);
 	}
 }
 
@@ -3482,7 +3478,7 @@ sub on_msg {
 
     $nick =~ tr/A-Z/a-z/;
 
-    check_messages($self, $kernel, $nick, $nick);
+    $self->check_messages($nick, $nick);
 
     return if ($ignorance->is_ignored($who, $msg));
 
@@ -3493,7 +3489,7 @@ sub on_msg {
 	my $line = $1;
 	$self->botspeak(demunge_recordline($line, 9), $nick);
     }
-    elsif (priv_and_pub_msg($self, $kernel, $nick, $nick, $msg) == 0) {
+    elsif ($self->priv_and_pub_msg($nick, $nick, $msg) == 0) {
 #	handled in priv_and_pub_msg
     }
     elsif ($msg =~ m/^!id\s(.*)$/i) {
@@ -3519,20 +3515,14 @@ sub on_msg {
 
 # Handle dcc request, accept and move on.
 sub on_dcc_req {
-
-    my ( $self, $kernel, $type, $who, $id ) =
-      @_[ OBJECT, KERNEL, ARG0, ARG1, ARG3 ];
-
+    my ( $self, $type, $who, $id ) = @_[ OBJECT, ARG0, ARG1, ARG3 ];
     $irc->yield('dcc_accept', $id);
 }
 
 # Start up the DCC session, or welcome back
 sub on_dcc_start {
-
-    my ( $self, $kernel, $id, $who, $type ) =
-      @_[ OBJECT, KERNEL, ARG0, ARG1, ARG2 ];
+    my ( $self, $id, $who, $type ) = @_[ OBJECT, ARG0, ARG1, ARG2 ];
     my $nick = ( split /!/, $who )[0];
-
     if ( $type eq 'CHAT' ) {
 	$self->bot_priv_msg("DCC CHAT from $nick");
     }
@@ -3541,12 +3531,8 @@ sub on_dcc_start {
 
 # Handle a dcc_chat session, parse for commands
 sub on_dcc_chat {
-
-    my ( $self, $kernel, $id, $who, $msg ) =
-      @_[ OBJECT, KERNEL, ARG0, ARG1, ARG3 ];
-
+    my ( $self, $id, $who, $msg ) = @_[ OBJECT, ARG0, ARG1, ARG3 ];
     my $nick = ( split /!/, $who )[0];
-
     $self->bot_priv_msg("DCC CHAT <$nick> $msg");
 }
 
@@ -3554,24 +3540,21 @@ sub on_dcc_chat {
 # Doesn't appear to be working, I need to question
 # my implementation, but we'll do that later
 sub on_dcc_err {
-
-    my ( $self, $kernel, $id, $who ) = @_[ OBJECT, KERNEL, ARG0, ARG2 ];
+    my ( $self, $id, $who ) = @_[ OBJECT, ARG0, ARG2 ];
     my $nick = ( split /!/, $who )[0];
-
     $self->bot_priv_msg("DCC CHAT ERR ($nick)");
 }
 
 # DCC session is done, close out, kill session.
 sub on_dcc_done {
-
-    my ( $self, $kernel, $id, $who ) = @_[ OBJECT, KERNEL, ARG0, ARG1 ];
+    my ( $self, $id, $who ) = @_[ OBJECT, ARG0, ARG1 ];
     my $nick = ( split /!/, $who )[0];
 
     $self->bot_priv_msg("DCC CHAT CLOSED ($nick)");
 }
 
 sub on_wiki_datagram {
-    my ( $self, $kernel, $socket ) = @_[ OBJECT, KERNEL, ARG0 ];
+    my ( $self, $socket ) = @_[ OBJECT, ARG0 ];
     recv( $socket, my $message = "", DATAGRAM_MAXLEN, 0 );
     if ($message ne "") {
 	push @wiki_datagram_queue, { "time" => time(), "message" => $message };
@@ -3623,9 +3606,7 @@ sub handle_wiki_datagrams {
 
 # Got back info from the NAMES command.
 sub on_names {
-
-    my ( $self, $kernel, $sender, $server, $who ) =
-      @_[ OBJECT, KERNEL, SENDER, ARG0 .. ARG1 ];
+    my ( $self, $sender, $server, $who ) = @_[ OBJECT, SENDER, ARG0 .. ARG1 ];
 
     $who =~ /([^"]*)\s+:([^"]*)\s+/;
     my $chan  = $1;
