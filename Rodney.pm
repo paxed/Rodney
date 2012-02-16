@@ -1535,7 +1535,7 @@ sub database_sync {
 my $send_msg_id = undef;
 
 sub bot_priv_msg {
-    my ( $self, $kernel, $msg ) = @_;
+    my ( $self, $msg ) = @_;
     if (defined $send_msg_id) {
 	$self->botspeak("BOTPRIVMSG: $msg", $send_msg_id);
     }
@@ -1572,7 +1572,7 @@ sub on_ping {
     my ( $self, $kernel, $who ) = @_[ OBJECT, KERNEL, ARG0 ];
     my $nick = ( split /!/, $who )[0];
     $irc->yield('ctcpreply', $nick, "PING", "PONG");
-    $self->bot_priv_msg($kernel, "PING from $nick");
+    $self->bot_priv_msg("PING from $nick");
 }
 
 # Someone changed their nick, handle it.
@@ -1592,7 +1592,7 @@ sub on_ver {
     my ( $self, $kernel, $who ) = @_[ OBJECT, KERNEL, ARG0 ];
     my $nick = ( split /!/, $who )[0];
     $irc->yield('ctcpreply', $nick, "VERSION", "Oh no, $self->{'Nick'}'s using the touch of death!");
-    $self->bot_priv_msg($kernel, "CTCP VERSION from $nick");
+    $self->bot_priv_msg("CTCP VERSION from $nick");
 }
 
 # Handle CTCP Finger
@@ -1601,7 +1601,7 @@ sub on_finger {
     my ( $self, $kernel, $who ) = @_[ OBJECT, KERNEL, ARG0 ];
     my $nick = ( split /!/, $who )[0];
     $irc->yield('ctcpreply', $nick, "FINGER", "Oh no, $self->{'Nick'}'s using the touch of death!");
-    $self->bot_priv_msg($kernel, "CTCP FINGER from $nick");
+    $self->bot_priv_msg("CTCP FINGER from $nick");
 }
 
 # Handle CTCP Page
@@ -1610,7 +1610,7 @@ sub on_page {
     my ( $self, $kernel, $who ) = @_[ OBJECT, KERNEL, ARG0 ];
     my $nick = ( split /!/, $who )[0];
     $irc->yield('ctcpreply', $nick, "PAGE", "Oh no, $self->{'Nick'}'s using the touch of death!");
-    $self->bot_priv_msg($kernel, "CTCP PAGE from $nick");
+    $self->bot_priv_msg("CTCP PAGE from $nick");
 }
 
 # Handle CTCP Time
@@ -1620,7 +1620,7 @@ sub on_time {
     my $nick = ( split /!/, $who )[0];
     my $ts = scalar(localtime);
     $irc->yield('ctcpreply', $nick, "TIME", $ts );
-    $self->bot_priv_msg($kernel, "CTCP TIME from $nick");
+    $self->bot_priv_msg("CTCP TIME from $nick");
 }
 
 sub mangle_msg_for_trigger {
@@ -1674,7 +1674,7 @@ sub on_notice {
     my $time = localtime( time() );
     print "[$self->{'Nick'} $time] NOTICE: $nick: $msg\n";
 
-    $self->bot_priv_msg($kernel, "NOTICE: <$nick> $msg");
+    $self->bot_priv_msg("NOTICE: <$nick> $msg");
 }
 
 # Handle kicks
@@ -3248,7 +3248,7 @@ sub on_public {
     check_messages($self, $kernel, $nick, $channel);
 
     if ($ignorance->is_ignored($who, $msg)) {
-	$self->bot_priv_msg($kernel, "[ignored] <$nick> $msg");
+	$self->bot_priv_msg("[ignored] <$nick> $msg");
 	return;
     }
 
@@ -3486,7 +3486,7 @@ sub on_msg {
 
     return if ($ignorance->is_ignored($who, $msg));
 
-    $self->bot_priv_msg($kernel, "<$nick> $msg") if ((defined $send_msg_id) && ($send_msg_id ne $nick));
+    $self->bot_priv_msg("<$nick> $msg") if ((defined $send_msg_id) && ($send_msg_id ne $nick));
 
     if ($msg =~ m/^!decode\s(.+)$/i) {
 # !decode <recordline>
@@ -3534,7 +3534,7 @@ sub on_dcc_start {
     my $nick = ( split /!/, $who )[0];
 
     if ( $type eq 'CHAT' ) {
-	$self->bot_priv_msg($kernel, "DCC CHAT from $nick");
+	$self->bot_priv_msg("DCC CHAT from $nick");
     }
 }
 
@@ -3547,7 +3547,7 @@ sub on_dcc_chat {
 
     my $nick = ( split /!/, $who )[0];
 
-    $self->bot_priv_msg($kernel, "DCC CHAT <$nick> $msg");
+    $self->bot_priv_msg("DCC CHAT <$nick> $msg");
 }
 
 # Got an error, attempt to close session.
@@ -3558,7 +3558,7 @@ sub on_dcc_err {
     my ( $self, $kernel, $id, $who ) = @_[ OBJECT, KERNEL, ARG0, ARG2 ];
     my $nick = ( split /!/, $who )[0];
 
-    $self->bot_priv_msg($kernel, "DCC CHAT ERR ($nick)");
+    $self->bot_priv_msg("DCC CHAT ERR ($nick)");
 }
 
 # DCC session is done, close out, kill session.
@@ -3567,7 +3567,7 @@ sub on_dcc_done {
     my ( $self, $kernel, $id, $who ) = @_[ OBJECT, KERNEL, ARG0, ARG1 ];
     my $nick = ( split /!/, $who )[0];
 
-    $self->bot_priv_msg($kernel, "DCC CHAT CLOSED ($nick)");
+    $self->bot_priv_msg("DCC CHAT CLOSED ($nick)");
 }
 
 sub on_wiki_datagram {
