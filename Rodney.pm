@@ -1643,7 +1643,7 @@ sub on_action {
     my $time = localtime( time() );
     print "[$channel $time] Action: *$nick $msg\n";
 
-    log_channel_msg($self, $channel, $nick, "*$nick ".$msg);
+    $self->log_channel_msg($channel, $nick, "*$nick ".$msg);
 
     $seen_db->seen_log($nick, "acted out \"$nick $msg\"");
 
@@ -1776,7 +1776,7 @@ sub botspeak {
 			  $msg);
 
 	    if (defined $channel && ($channel =~ m/^#/)) {
-		log_channel_msg($self, $channel, $self->{'Nick'}, $msg);
+		$self->log_channel_msg($channel, $self->{'Nick'}, $msg);
 	    }
 
 	}
@@ -1787,7 +1787,7 @@ sub botaction {
     my ($self, $msg, $channel) = @_;
     $irc->yield('sl', "PRIVMSG $channel :\001ACTION $msg\001");
     if (defined $channel && ($channel =~ m/^#/)) {
-	log_channel_msg($self, $channel, $self->{'Nick'}, "*".$self->{'Nick'}." ".$msg);
+	$self->log_channel_msg($channel, $self->{'Nick'}, "*".$self->{'Nick'}." ".$msg);
     }
 }
 
@@ -3237,7 +3237,7 @@ sub on_public {
     $seennick =~ tr/A-Z/a-z/;
     $seen_db->seen_log($seennick, "said \"$msg\"");
 
-    log_channel_msg($self, $channel, $nick, $msg);
+    $self->log_channel_msg($channel, $nick, $msg);
 
     return if (grep {$_ eq lc($channel)} $self->{'ignored_channels'});
 
