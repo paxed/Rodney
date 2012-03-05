@@ -283,7 +283,7 @@ sub shorten_url {
     my $url = shift;
     return '' if (!(defined $url));
 
-    $dbh = DBI->connect("dbi:".$shorturldb->{dbtype}.":".$shorturldb->{db}.":localhost",$shorturldb->{user},$shorturldb->{pass},{AutoCommit => 1, PrintError => 1});
+    my $dbh = DBI->connect("dbi:".$shorturldb->{dbtype}.":".$shorturldb->{db}.":localhost",$shorturldb->{user},$shorturldb->{pass},{AutoCommit => 1, PrintError => 1});
     if ($dbh) {
 	my $sth = $dbh->prepare("INSERT INTO shorturl (url) VALUES (".$dbh->quote($url).")");
 	if ($dbh->err()) { return $url; }
