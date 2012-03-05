@@ -27,7 +27,7 @@ sub db_connect {
 
     if (!($self->{'dbh'} = DBI->connect("dbi:SQLite:dbname=".$self->{'dbfile'},"","",{AutoCommit => 1, PrintError => 1}))) {
 	$self->{'disabled'} = 1;
-	print "Seen db disabled, could not connect to database.\n";
+	debugprint("Seen db disabled, could not connect to database.");
     } else {
 	$self->{'disabled'} = 0;
     }
@@ -64,7 +64,7 @@ sub seen_updatenick {
     my $dbh = $self->{'dbh'};
 
     my $sth = $dbh->prepare("SELECT count(*) FROM seendb WHERE name=".$dbh->quote($nick));
-    if ($dbh->err()) { print "$DBI::errstr\n"; $self->{'disabled'} = 1; return; }
+    if ($dbh->err()) { debugprint("$DBI::errstr"); $self->{'disabled'} = 1; return; }
     $sth->execute();
 
     my $rowcnt = $sth->fetchrow_hashref();
@@ -78,7 +78,7 @@ sub seen_updatenick {
 			     $dbh->quote($text).", ".
 			     $dbh->quote($time).")");
     }
-    if ($dbh->err()) { print "$DBI::errstr\n"; $self->{'disabled'} = 1; return; }
+    if ($dbh->err()) { debugprint("$DBI::errstr"); $self->{'disabled'} = 1; return; }
     $sth->execute();
 }
 
@@ -91,10 +91,9 @@ sub seen_setnicks {
     my $a;
     my @nlist = (split / /, $nicklist);
 
-    print "->".$nicklist."<-\n";
-    print "--".$channel."--\n";
-
     $channel =~ s/^[^a-zA-Z]*/#/;
+
+    debugprint("Nicklist for $channel: ".$nicklist);
 
     my $time = time();
     my $text = "was on $channel when I joined";
@@ -144,7 +143,7 @@ sub seen_get {
 
     my $dbh = $self->{'dbh'};
     my $sth = $dbh->prepare("SELECT seentime,seentext FROM seendb WHERE name=".$dbh->quote($nick));
-    if ($dbh->err()) { print "$DBI::errstr\n"; $self->{'disabled'} = 1; return; }
+    if ($dbh->err()) { debugprint("$DBI::errstr"); $self->{'disabled'} = 1; return; }
     $sth->execute();
 
     while ($dbdata = $sth->fetchrow_hashref()) {

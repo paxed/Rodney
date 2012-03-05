@@ -77,7 +77,7 @@ use constant DATAGRAM_MAXLEN => 1024;
 sub db_connect {
     my ($self) = @_;
     if (!($dbh = DBI->connect("dbi:".$xlogfiledb->{dbtype}.":".$xlogfiledb->{db}.":localhost",$xlogfiledb->{user},$xlogfiledb->{pass},{AutoCommit => 1, PrintError => 1}))) {
-	print "Cannot connect to xlogfile db.\n";
+	debugprint("Cannot connect to xlogfile db.");
 	undef $dbh;
     }
 }
@@ -142,7 +142,7 @@ sub run {
     $ignorance->init($self->{'ignorancefile'});
     $ignorance->load();
 
-    print "Running the bot.\n";
+    debugprint("Running the bot.");
 
     $self->daemonize() if ($self->{'Daemonize'});
 
@@ -151,7 +151,7 @@ sub run {
     ($irc) = POE::Component::IRC->spawn()
 	|| croak "Cannot create new P::C::I object!\n";
 
-    print "irc->new(nick)\n";
+    debugprint("irc->new(nick)");
 
     POE::Session->create(
         object_states => [
@@ -193,11 +193,11 @@ sub run {
         ]
     );
 
-    print "session_create\n";
+    debugprint("session_create");
 
     $poe_kernel->run();
 
-    print "run\n";
+    debugprint("run");
 }
 
 sub _poe_default_msg {
@@ -223,9 +223,7 @@ sub bot_start {
 
     $kernel = $_[ KERNEL ];
 
-    my $ts = scalar(localtime);
-
-    print "[$ts] Starting Up...\n";
+    debugprint("Starting Up...");
 
     my $socket = IO::Socket::INET->new(
         Proto     => 'udp',
@@ -235,7 +233,7 @@ sub bot_start {
     die "Couldn't create server socket: $!" unless $socket;
 
     $irc->yield('register', 'all');
-    print "nick register\n";
+    debugprint("nick register");
     $irc->yield(
         'connect',
         {
@@ -247,29 +245,29 @@ sub bot_start {
             Ircname  => $self->{'Ircname'}
         }
     );
-    print "connect...\n";
+    debugprint("connect...");
     $kernel->delay( 'reconnect', 20 );
-    print "reconnect delay\n";
+    debugprint("reconnect delay");
     $self->setup_tail() if ($self->{'CheckLog'} > 0);
-    print "setup_tail\n";
+    debugprint("setup_tail");
     $learn_db->init($self->{'LearnDBFile'});
-    print "learn_db\n";
+    debugprint("learn_db");
     $seen_db->init($self->{'SeenDBFile'});
-    print "seen_db\n";
+    debugprint("seen_db");
 
     $user_messages_db->init($self->{'MessagesDBFile'});
-    print "messages_db\n";
+    debugprint("messages_db");
 
     $buglist_db->init($self->{'BugCache'}, $self->{'nh_org_bugpage'});
 
     $kernel->delay('d_tick' => 10) if ($self->{'CheckLog'} > 0);
-    print "tick\n";
+    debugprint("tick");
     $kernel->delay('database_sync' => 600);
-    print "db_sync\n";
+    debugprint("db_sync");
     if ($self->{'CheckBug'} > 0) {
 	$buglist_db->cache_read();
 	$kernel->delay('buglist_update' => 30);
-	print "buglist_update\n";
+	debugprint("buglist_update");
     }
 
     $kernel->select_read( $socket, "get_wiki_datagram" );
@@ -292,7 +290,7 @@ sub shorten_url {
 	$dbh->disconnect();
 	$url = 'http://url.alt.org/?'.$id;
     } else {
-	print "Url shortening db error.\n" if (!$dbh);
+	debugprint("Url shortening db error.") if (!$dbh);
     }
 
     return $url;
@@ -939,7 +937,7 @@ sub paramstr_is_used_playername {
     return 0 if (!$dbh);
 
     my $sth = $dbh->prepare("SELECT username FROM dglusers WHERE username like ".$dbh->quote($plrname));
-    if ($dbh->err()) { print "$DBI::errstr\n"; return 0; }
+    if ($dbh->err()) { debugprint("$DBI::errstr"); return 0; }
     $sth->execute();
 
     my $rowcnt = $sth->fetchrow_hashref();
@@ -957,7 +955,7 @@ sub paramstr_playername {
     return "" if (!$dbh);
 
     my $sth = $dbh->prepare("SELECT username FROM dglusers WHERE username like ".$dbh->quote($plrname));
-    if ($dbh->err()) { print "$DBI::errstr\n"; return ""; }
+    if ($dbh->err()) { debugprint("$DBI::errstr"); return ""; }
     $sth->execute();
 
     my $rowcnt = $sth->fetchrow_hashref();
@@ -971,7 +969,7 @@ sub paramstr_iswikipage {
         my $db = DBI->connect("dbi:".$nethackwikidb->{dbtype}.":".$nethackwikidb->{db}.":localhost",
                               $nethackwikidb->{user}, $nethackwikidb->{pass},
                               {AutoCommit => 1, PrintError => 1});
-        if ($db->err()) { print "$DBI::errstr\n"; return ""; }
+        if ($db->err()) { debugprint("$DBI::errstr"); return ""; }
         if ($db) {
             $str =~ tr/ /_/;
             my $sth = $db->prepare("SELECT count(1) AS numpages FROM page WHERE LOWER(CONVERT(page_title USING latin1)) LIKE ".$db->quote(lc($str))." AND page_namespace=0");
@@ -990,7 +988,7 @@ sub paramstr_wikipage {
         my $db = DBI->connect("dbi:".$nethackwikidb->{dbtype}.":".$nethackwikidb->{db}.":localhost",
                               $nethackwikidb->{user}, $nethackwikidb->{pass},
                               {AutoCommit => 1, PrintError => 1});
-        if ($db->err()) { print "$DBI::errstr\n"; return ""; }
+        if ($db->err()) { debugprint("$DBI::errstr"); return ""; }
         if ($db) {
             $str =~ tr/ /_/;
             my $sth = $db->prepare("SELECT page_title, count(1) as numpages FROM page WHERE LOWER(CONVERT(page_title USING latin1)) LIKE ".$db->quote(lc($str))." AND page_namespace=0");
@@ -1008,7 +1006,7 @@ sub paramstr_nwikipages {
         my $db = DBI->connect("dbi:".$nethackwikidb->{dbtype}.":".$nethackwikidb->{db}.":localhost",
                               $nethackwikidb->{user}, $nethackwikidb->{pass},
                               {AutoCommit => 1, PrintError => 1});
-        if ($db->err()) { print "$DBI::errstr\n"; return ""; }
+        if ($db->err()) { debugprint("$DBI::errstr"); return ""; }
         if ($db) {
             $str =~ tr/ /_/;
             my $sth = $db->prepare("SELECT count(1) AS numpages FROM page WHERE LOWER(CONVERT(page_title USING latin1)) LIKE ".$db->quote(lc($str))." AND page_namespace=0");
@@ -1028,7 +1026,7 @@ sub buglist_update {
 	$self->botspeak($outstr);
     }
 
-    print "buglist_update\n" if ($self->{'Debug'});
+    debugprint("buglist_update") if ($self->{'Debug'});
 
     if ($kernel) { $kernel->delay('buglist_update' => 300); }
 }
@@ -1336,12 +1334,12 @@ sub setup_tail {
     my $self = shift;
     my $fname = $self->{'nh_logfile'};
     my $livefname = $self->{'nh_livelogfile'};
-    print "setup_tail\n";
+    debugprint("setup_tail");
     if (open($LOGFILE,$fname)) {
 	seek($LOGFILE,0,2);
 	$curpos = tell($LOGFILE);
     } else {
-	print "Can't open file $fname, logfile checking disabled.\n";
+	debugprint("Can't open file $fname, logfile checking disabled.");
 	$self->{'CheckLog'} = 0;
     }
 
@@ -1349,7 +1347,7 @@ sub setup_tail {
 	seek($LIVELOGFILE,0,2);
 	$livelog_pos = tell($LIVELOGFILE);
     } else {
-	print "Can't open file $livefname, logfile checking disabled.\n";
+	debugprint("Can't open file $livefname, livelog checking disabled.");
 	$self->{'CheckLog'} = 0;
     }
 }
@@ -1551,20 +1549,20 @@ sub on_connect {
     my ( $self ) = $_[ OBJECT ];
 #    $irc->yield( 'mode', $self->{'Nick'}, '+B' );
 
-    print "on_connect\n";
+    debugprint("on_connect");
 
     sleep 2;
 
     $self->botspeak("identify $self->{'Nickpass'}", 'Nickserv');
 
-    print "nickserv\n";
+    debugprint("nickserv");
 
     sleep 5; # just wait a bit for nickserv to cloak us
 
     foreach my $chan ( @{ $self->{'Channels'} } ) {
         $irc->yield('join', $chan);
     }
-    print "join channels\n";
+    debugprint("join channels");
 #    $kernel->delay('keepalive' => 300);
 }
 
@@ -1642,8 +1640,7 @@ sub on_action {
 
     my $nick = ( split /!/, $who )[0];
     my $channel = $where->[0];
-    my $time = localtime( time() );
-    print "[$channel $time] Action: *$nick $msg\n";
+    debugprint("[$channel] Action: *$nick $msg");
 
     $self->log_channel_msg($channel, $nick, "*$nick ".$msg);
 
@@ -1660,10 +1657,9 @@ sub on_mode {
     my ( $self, $who, $where, $mode, $nicks ) = @_[ OBJECT, ARG0, ARG1, ARG2, ARG3 ];
 
     my $nick = ( split /!/, $who )[0];
-    my $time = localtime( time() );
     $self->{'Nick'} eq $where
-      ? print "[$where $time] MODE: $mode\n"
-      : print "[$where $time] MODE: $mode $nicks by: $nick\n";
+      ? debugprint("[$where] MODE: $mode")
+      : debugprint("[$where] MODE: $mode $nicks by: $nick");
 }
 
 # Handle notices
@@ -1671,8 +1667,7 @@ sub on_notice {
     my ( $self, $who, $msg ) = @_[ OBJECT, ARG0, ARG2 ];
 
     my $nick = ( split /!/, $who )[0];
-    my $time = localtime( time() );
-    print "[$self->{'Nick'} $time] NOTICE: $nick: $msg\n";
+    debugprint("[$self->{'Nick'}] NOTICE: $nick: $msg");
 
     $self->bot_priv_msg("NOTICE: <$nick> $msg");
 }
@@ -1682,8 +1677,7 @@ sub on_kick {
     my ( $self, $who, $chan, $kickee, $msg ) = @_[ OBJECT, ARG0, ARG1, ARG2, ARG3 ];
 
     my $nick = ( split /!/, $who )[0];
-    my $time = localtime( time() );
-    print "[$chan $time] KICK: $nick: $kickee ($msg)\n";
+    debugprint("[$chan] KICK: $nick: $kickee ($msg)");
     $nick =~ tr/A-Z/a-z/;
     $seen_db->seen_log($nick, "kicked by $kickee ($msg)");
 }
@@ -1693,8 +1687,7 @@ sub on_quit {
     my ( $self, $who, $msg ) = @_[ OBJECT, ARG0, ARG1 ];
 
     my $nick = ( split /!/, $who )[0];
-    my $time = localtime( time() );
-    print "[$self->{'Nick'} $time] QUIT: $nick: $msg\n";
+    debugprint("[$self->{'Nick'}] QUIT: $nick: $msg");
     $nick =~ tr/A-Z/a-z/;
     if ((defined $send_msg_id) && ($nick eq $send_msg_id)) { undef $send_msg_id; }
     $seen_db->seen_log($nick, "quit ($msg)");
@@ -1707,8 +1700,7 @@ sub on_join {
     my $irc = $_[SENDER]->get_heap();
 
     my $nick = ( split /!/, $who )[0];
-    my $time = localtime( time() );
-    print "[$where $time] JOIN: $nick\n";
+    debugprint("[$where] JOIN: $nick");
 
     if ($nick eq $irc->nick_name()) {
 	push(@{$self->{'joined_channels'}}, $where);
@@ -1723,11 +1715,10 @@ sub on_join {
 sub on_part {
     my ( $self, $who, $where ) = @_[ OBJECT, ARG0, ARG1 ];
 
-    print "on_part\n";
+    debugprint("on_part");
 
     my $nick = ( split /!/, $who )[0];
-    my $time = localtime( time() );
-    print "[$where $time] PART: $nick\n";
+    debugprint("[$where] PART: $nick");
     $nick =~ tr/A-Z/a-z/;
     if ((defined $send_msg_id) && ($nick eq $send_msg_id)) { undef $send_msg_id; }
     $seen_db->seen_log($nick, "parted $where");
@@ -1737,11 +1728,11 @@ sub on_part {
 sub on_nick_taken {
     my ( $self ) = $_[ OBJECT ];
 
-    print "on_nick_taken\n";
+    debugprint("on_nick_taken");
 
     my $nick  = $self->{'AltNick'};
     $irc->yield('nick', "$nick");
-    print "Nick was taken, trying $nick\n";
+    debugprint("Nick was taken, trying $nick");
     # TODO: ghost $self->{'Nick'} and change nick to that.
 }
 
@@ -1800,7 +1791,7 @@ sub botaction {
 sub keepalive {
     my ( $self, $heap ) = @_[ OBJECT, HEAP ];
 
-#    print "keepalive\n";
+#    debugprint("keepalive");
 
 #    $heap->{'keepalive_time'} += 30;
     $kernel->delay('keepalive' => 300);
@@ -2791,7 +2782,7 @@ sub log_channel_msg {
 	if (open(my $tmpfile, ">>$logf")) {
 	    $channel_log_data{$channel} = { flushtime => 0, filehandle => $tmpfile, disabled => 0 };
 	} else {
-	    print "Failed to open channel log file $logf.\n";
+	    debugprint("Failed to open channel log file $logf.");
 	    $channel_log_data{$channel} = { disabled => 1 };
 	}
     }
@@ -3232,8 +3223,7 @@ sub on_public {
     my $nick = ( split /!/, $who )[0];
     my $channel = $where->[0];
     my $pubmsg  = $msg;
-    my $time    = localtime( time() );
-#    print "[$channel $time] <$nick> $msg\n";
+#    debugprint("[$channel] <$nick> $msg");
 
     my $seennick = $nick;
     $seennick =~ tr/A-Z/a-z/;
@@ -3474,8 +3464,7 @@ sub on_msg {
     my ( $self, $who, $nicks, $msg ) = @_[ OBJECT, ARG0, ARG1, ARG2 ];
     my $nick = ( split /!/, $who )[0];
 
-    my $time = localtime( time() );
-    print "[$self->{'Nick'} $time] <$nick> $msg\n";
+    debugprint("[$self->{'Nick'}] <$nick> $msg");
 
     $nick =~ tr/A-Z/a-z/;
 

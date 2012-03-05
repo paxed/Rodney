@@ -4,6 +4,8 @@ use strict;
 use warnings;
 use diagnostics;
 
+do "librodney.pm";
+
 # hash values used:
 # dbfile	the file name where to read from / write to
 # db		the db hash
@@ -35,7 +37,7 @@ sub init {
 	}
 	$self->{'dbfile'} = $learnfile if (!$self->{'dbfile'});
     } else {
-	print "Cannot open learndb file $learnfile.\n";
+	debugprint("Cannot open learndb file $learnfile.");
     }
     $self->{'dbchanged'} = 0;
 }
@@ -57,7 +59,7 @@ sub sync {
 
     $self->{'dbchanged'} = 0;
 
-    print "Synched $dbfile\n";
+    debugprint("Synched $dbfile");
 }
 
 

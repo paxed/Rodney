@@ -10,6 +10,11 @@ use Time::Local;
 
 use nhconst;
 
+sub debugprint {
+    my $ts = localtime(time());
+    print "[$ts] " . join(" ", @_) . "\n";
+}
+
 
 # decode_xlog_datastr("conduct", "0x102")
 sub decode_xlog_datastr {

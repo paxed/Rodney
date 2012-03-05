@@ -6,6 +6,8 @@ use diagnostics;
 
 use DBI;
 
+do "librodney.pm";
+
 sub new {
     my $class = shift;
     my %args  = @_;
@@ -79,7 +81,7 @@ sub load {
 	    push(@{$self->{'ignorance'}}, $a) if ($a =~ m/^(.+)\t(.+)$/);
 	}
     } else {
-	print "can't read $fname\n"
+	debugprint("can't read $fname");
     }
 }
 
