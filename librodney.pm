@@ -611,11 +611,14 @@ sub dogrepsrc {
     my $grepstr = shift;
     my $srcfiles = shift || "/opt/nethack/rodney/data/nh343/src/*.[ch] /opt/nethack/rodney/data/nh343/include/*.[ch]";
 
+    my $tmpstr = $grepstr;
+    $tmpstr =~ s/[^a-zA-Z0-9]//g;
+
     $grepstr =~ s/["')(\[\]]/./g;
 
     $grepstr =~ s/\\/./g;
 
-    return "Need something sensible to look for." if ($grepstr =~ m/^[.\s]+$/);
+    return "Need something sensible to look for." if ($tmpstr eq "");
 
     my $grepline = "grep -n \"$grepstr\" $srcfiles";
 
