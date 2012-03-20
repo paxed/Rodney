@@ -63,6 +63,7 @@ my $user_messages_db = Messages->new();
 my $admin_nicks = NickIdList->new();
 my $dbh;
 
+my @recent_nicks;
 
 my @wiki_datagram_queue = ();
 
@@ -72,6 +73,19 @@ my $dgldb;
 my $nethackwikidb;
 
 use constant DATAGRAM_MAXLEN => 1024;
+
+
+sub recent_nicks_add {
+    my $nick = shift;
+    return if ( grep {lc($_) eq lc($nick)} @recent_nicks );
+    shift(@recent_nicks) if ($#recent_nicks >= 4);
+    push(@recent_nicks, $nick);
+}
+
+sub recent_nicks_getrnd {
+    return "no-one" if ($#recent_nicks == -1);
+    return $recent_nicks[rand(@recent_nicks)];
+}
 
 
 sub db_connect {
@@ -3000,6 +3014,7 @@ sub parse_strvariables {
     my $rnd_player = $curr_players[rand(@curr_players)];
     my $pom_str = get_pom_str();
     my $curdate = `date`;
+    my $recent_nick = recent_nicks_getrnd();
     $curdate =~ s/\n$//;
 
     my $selfnick = $self->{'Nick'};
@@ -3054,6 +3069,7 @@ sub parse_strvariables {
 	'$'           => \&paramstr_getvar,
 	'$GOD'        => \&paramstr_rndgod,
 	'$NICK'   => $nick,
+	'$RNICK'  => $recent_nick,
 	'$CHAN'   => $channel,
 	'$SELF'   => $selfnick,
 	'$ARGS'   => $args,
@@ -3232,6 +3248,8 @@ sub on_public {
     $self->log_channel_msg($channel, $nick, $msg);
 
     return if (grep {$_ eq lc($channel)} $self->{'ignored_channels'});
+
+    recent_nicks_add($nick);
 
     $self->check_messages($nick, $channel);
 

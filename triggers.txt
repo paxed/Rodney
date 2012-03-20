@@ -28,6 +28,7 @@ $ARG	 	   Returns one of the arguments given to the trigger, chosen at random, o
 $ARGS    	   Returns all of the arguments given to the trigger, or nick or the person issuing the trigger if no args.
 		   Pipe characters in both $ARG and $ARGS are escaped by default, so they don't interfere with other commands.
 $NICK		   The nick of the user who triggered the message.
+$RNICK		   A nick of a recently active user.
 $SELF	 	   The bot's name (Usually "Rodney").
 $CHAN	 	   Channel where the trigger happened.
 
