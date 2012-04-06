@@ -1678,7 +1678,7 @@ sub on_mode {
     my $nick = ( split /!/, $who )[0];
     $self->{'Nick'} eq $where
       ? debugprint("[$where] MODE: $mode")
-      : debugprint("[$where] MODE: $mode $nicks by: $nick");
+      : debugprint("[$where] MODE: $mode ".($nicks ? $nicks." " : "")."by: $nick");
 }
 
 # Handle notices
