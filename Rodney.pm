@@ -3637,17 +3637,20 @@ sub on_names {
     $seen_db->seen_setnicks($names, $chan);
 }
 
-$SIG{'INT'} = \&kill_bot;
-$SIG{'HUP'} = \&kill_bot;
-
-sub kill_bot {
-
+sub shutdown_bot {
     $reddit_rss->cache_write();
     $buglist_db->cache_write();
     database_sync();
     $seen_db->sync();
     log_channel_msg_flush();
     $ignorance->save();
+}
+
+$SIG{'INT'} = \&kill_bot;
+$SIG{'HUP'} = \&kill_bot;
+
+sub kill_bot {
+    shutdown_bot();
     die("kill_bot()");
 }
 
@@ -3675,16 +3678,8 @@ sub on_disco {
 
 #    $kernel->delay('keepalive' => undef);
 #    $kernel->delay('d_tick' => undef);
-
-    $reddit_rss->cache_write();
-    $buglist_db->cache_write();
-    database_sync();
-    $seen_db->sync();
-    log_channel_msg_flush();
-    $ignorance->save();
-
+    shutdown_bot();
     exit(0);
-
 }
 
 1;
