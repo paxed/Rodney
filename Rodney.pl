@@ -30,6 +30,7 @@ my $botdatapath = '/opt/nethack/rodney';
 # channels to ignore (for triggers & commands)
 			 ignored_channels => [],
 
+			 RSS_tstamp => $botdatapath.'/data/',
 			 LogPath  => $botdatapath.'/log/',
 			 LearnDBFile => $botdatapath.'/data/learn.dat',
 #			 SeenDBFile => $botdatapath.'/data/seen.dat',

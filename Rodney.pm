@@ -44,7 +44,7 @@ use nhbugs;
 use messages;
 use nickidlist;
 use ignorance;
-
+use redditrss;
 
 
 my @nh_monsters;
@@ -61,6 +61,7 @@ my $seen_db = SeenDB->new();
 my $buglist_db = NHBugsDB->new();
 my $user_messages_db = Messages->new();
 my $admin_nicks = NickIdList->new();
+my $reddit_rss = RedditRSS->new();
 my $dbh;
 
 my @recent_nicks;
@@ -202,6 +203,7 @@ sub run {
 		buglist_update	=> "buglist_update",
 		get_wiki_datagram => "on_wiki_datagram",
 		handle_wiki_data => "handle_wiki_datagrams",
+		handle_reddit_rss_data => "handle_reddit_rss",
 		handle_querythread_out => "handle_querythread_output"
             }
         ]
@@ -273,6 +275,9 @@ sub bot_start {
     debugprint("messages_db");
 
     $buglist_db->init($self->{'BugCache'}, $self->{'nh_org_bugpage'});
+
+    $reddit_rss->init('http://reddit.com/r/nethack.rss', $self->{'RSS_tstamp'});
+    $kernel->delay('handle_reddit_rss_data' => 30);
 
     $kernel->delay('d_tick' => 10) if ($self->{'CheckLog'} > 0);
     debugprint("tick");
@@ -3275,6 +3280,15 @@ sub handle_querythread_output {
     $kernel->delay('handle_querythread_out' => 10);
 }
 
+sub handle_reddit_rss {
+    my ( $self ) = $_[ OBJECT ];
+
+    my $s = $reddit_rss->update_rss();
+    $self->botspeak($s) if ($s);
+
+    $kernel->delay('handle_reddit_rss_data' => 30);
+}
+
 my $privmsg_time = 0;
 my $privmsg_throttle = 10;
 
@@ -3628,6 +3642,7 @@ $SIG{'HUP'} = \&kill_bot;
 
 sub kill_bot {
 
+    $reddit_rss->cache_write();
     $buglist_db->cache_write();
     database_sync();
     $seen_db->sync();
@@ -3661,7 +3676,7 @@ sub on_disco {
 #    $kernel->delay('keepalive' => undef);
 #    $kernel->delay('d_tick' => undef);
 
-
+    $reddit_rss->cache_write();
     $buglist_db->cache_write();
     database_sync();
     $seen_db->sync();
