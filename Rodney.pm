@@ -1092,7 +1092,7 @@ sub whereis_players {
 
     undef $plr if ((defined $plr) && !($plr =~ m/^[a-z0-9]+$/));
 
-    $pretext = "$#players player" . (($#players == 1) ? '' : 's') . ': ' if (!$plr);
+    $pretext = scalar @players . " player" . ((scalar @players == 1) ? '' : 's') . ': ' if (!$plr);
 
 #depth=29:dnum=0:hp=134:maxhp=134:turns=46326:score=343234:role=Caveman:race=human:gender=Mal:align=lawful:conduct=0xf88:amulet=0
 
@@ -1388,6 +1388,7 @@ sub on_d_tick {
 		if (($dat{'points'} < 1000) && ($dat{'death'} =~ /^quit|^escaped/)) { next; }
 		# someone thought of spamming
 #		elsif ($death =~ /((http)|(www\.)|(ipod)|(tinyurl)|(xrl)/i)) { next; }
+        elsif ($dat{'name'} eq 'JPB01' || $dat{'name'} eq 'Mistress') { next; }
 
 		my $infostr = "$dat{'name'} ($dat{'crga'}), $dat{'points'} points, $dat{'death'}";
 		my $oldstyle = xlog2record($line);
