@@ -2158,9 +2158,7 @@ sub do_pubcmd_dbquery {
 
     @a = $learn_db->query($term);
     if (@a == 0) {
-	$self->botspeak("$term not found in dictionary. Trying a search.", $errsto, $donotice);
 	@a = $learn_db->search($term, \$error);
-
 	# on error, messages go to the requester
 	$sendto = $errsto if $error;
     }
