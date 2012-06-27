@@ -3477,7 +3477,7 @@ sub admin_msg {
 		$self->botspeak("Showing privmsgs to you.", $nick);
 	    }
 	}
-	elsif ($msg =~ m/^!die(\s.+)?$/i) {
+	elsif ($msg =~ m/^!die\s(\S.+)?$/i) {
 	    $self->botspeak(paramstr_trim($1)) if ($1);
 	    kill_bot();
 	}
