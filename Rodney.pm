@@ -2876,7 +2876,7 @@ sub is_learndb_trigger {
 }
 
 sub can_edit_learndb {
-    my $nick = shift;
+    my $nick = lc(shift);
     my $term = shift;
     if (is_learndb_trigger($term)) {
 	return 1 if ($admin_nicks->is_identified($nick));
@@ -3305,7 +3305,7 @@ my $parsestr_cmd_args = "";
 sub admin_msg {
     my ( $self, $who, $nicks, $msg ) = @_;
 
-    my $nick = ( split /!/, $who )[0];
+    my $nick = lc(( split /!/, $who )[0]);
 
 	if ($msg =~ m/^!say\s(\S+)\s(.+)$/i) {
 	    my $chn = $1;
