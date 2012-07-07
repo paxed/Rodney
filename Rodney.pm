@@ -831,12 +831,20 @@ sub mangle_sql_query {
 		    }
 		    if ( grep { $_ eq $tmpd } @nhconst::roles ) {
 			push(@wheres, "role".$tmp_oper.$dbh->quote($tmpd)) if ($dbh);
+		    } elsif ( grep { ucfirst($_) eq $tmpd } @nhconst::roles_long ) {
+			push(@wheres, "role".$tmp_oper.$dbh->quote(substr($tmpd,0,3))) if ($dbh);
 		    } elsif ( grep { $_ eq $tmpd } @nhconst::races ) {
 			push(@wheres, "race".$tmp_oper.$dbh->quote($tmpd)) if ($dbh);
+		    } elsif ( grep { ucfirst($_) eq $tmpd } @nhconst::races_long ) {
+			push(@wheres, "race".$tmp_oper.$dbh->quote(substr($tmpd,0,3))) if ($dbh);
 		    } elsif ( grep { $_ eq $tmpd } @nhconst::aligns ) {
 			push(@wheres, "align".$tmp_oper.$dbh->quote($tmpd)) if ($dbh);
+		    } elsif ( grep { ucfirst($_) eq $tmpd } @nhconst::aligns_long ) {
+			push(@wheres, "align".$tmp_oper.$dbh->quote(substr($tmpd,0,3))) if ($dbh);
 		    } elsif ( grep { $_ eq $tmpd } @nhconst::genders ) {
 			push(@wheres, "gender".$tmp_oper.$dbh->quote($tmpd)) if ($dbh);
+		    } elsif ( grep { ucfirst($_) eq $tmpd } @nhconst::genders_long ) {
+			push(@wheres, "gender".$tmp_oper.$dbh->quote(substr($tmpd,0,3))) if ($dbh);
 		    } elsif ($aggr{aggregate}) {
 			my $tmpf = $aggr{field};
 			$tmpf = $field_renames{$tmpf} if ( grep { $_ eq $tmpf } keys(%field_renames) );
