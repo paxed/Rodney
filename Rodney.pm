@@ -277,7 +277,7 @@ sub bot_start {
     $buglist_db->init($self->{'BugCache'}, $self->{'nh_org_bugpage'});
 
     $reddit_rss->init('http://reddit.com/r/nethack.rss', $self->{'RSS_tstamp'});
-    $kernel->delay('handle_reddit_rss_data' => 30);
+    $kernel->delay('handle_reddit_rss_data' => 300);
 
     $kernel->delay('d_tick' => 10) if ($self->{'CheckLog'} > 0);
     debugprint("tick");
@@ -3292,7 +3292,7 @@ sub handle_reddit_rss {
     my $s = $reddit_rss->update_rss();
     $self->botspeak($s) if ($s);
 
-    $kernel->delay('handle_reddit_rss_data' => 30);
+    $kernel->delay('handle_reddit_rss_data' => 300);
 }
 
 my $privmsg_time = 0;
