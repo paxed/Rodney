@@ -1385,7 +1385,7 @@ sub on_d_tick {
 
 		my %dat = parse_xlogline($line);
 
-		if (($dat{'points'} < 1000) && ($dat{'death'} =~ /^quit|^escaped/)) { next; }
+		if (($dat{'points'} < 1000) && ($dat{'death'} =~ /^quit|^escaped|water/)) { next; }
 		# someone thought of spamming
 #		elsif ($death =~ /((http)|(www\.)|(ipod)|(tinyurl)|(xrl)/i)) { next; }
 
