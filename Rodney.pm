@@ -277,7 +277,7 @@ sub bot_start {
     $buglist_db->init($self->{'BugCache'}, $self->{'nh_org_bugpage'});
 
     $reddit_rss->init('http://reddit.com/r/nethack.rss', $self->{'RSS_tstamp'});
-    $kernel->delay('handle_reddit_rss_data' => 30);
+    $kernel->delay('handle_reddit_rss_data' => 300);
 
     $kernel->delay('d_tick' => 10) if ($self->{'CheckLog'} > 0);
     debugprint("tick");
@@ -831,12 +831,20 @@ sub mangle_sql_query {
 		    }
 		    if ( grep { $_ eq $tmpd } @nhconst::roles ) {
 			push(@wheres, "role".$tmp_oper.$dbh->quote($tmpd)) if ($dbh);
+		    } elsif ( grep { ucfirst($_) eq $tmpd } @nhconst::roles_long ) {
+			push(@wheres, "role".$tmp_oper.$dbh->quote(substr($tmpd,0,3))) if ($dbh);
 		    } elsif ( grep { $_ eq $tmpd } @nhconst::races ) {
 			push(@wheres, "race".$tmp_oper.$dbh->quote($tmpd)) if ($dbh);
+		    } elsif ( grep { ucfirst($_) eq $tmpd } @nhconst::races_long ) {
+			push(@wheres, "race".$tmp_oper.$dbh->quote(substr($tmpd,0,3))) if ($dbh);
 		    } elsif ( grep { $_ eq $tmpd } @nhconst::aligns ) {
 			push(@wheres, "align".$tmp_oper.$dbh->quote($tmpd)) if ($dbh);
+		    } elsif ( grep { ucfirst($_) eq $tmpd } @nhconst::aligns_long ) {
+			push(@wheres, "align".$tmp_oper.$dbh->quote(substr($tmpd,0,3))) if ($dbh);
 		    } elsif ( grep { $_ eq $tmpd } @nhconst::genders ) {
 			push(@wheres, "gender".$tmp_oper.$dbh->quote($tmpd)) if ($dbh);
+		    } elsif ( grep { ucfirst($_) eq $tmpd } @nhconst::genders_long ) {
+			push(@wheres, "gender".$tmp_oper.$dbh->quote(substr($tmpd,0,3))) if ($dbh);
 		    } elsif ($aggr{aggregate}) {
 			my $tmpf = $aggr{field};
 			$tmpf = $field_renames{$tmpf} if ( grep { $_ eq $tmpf } keys(%field_renames) );
@@ -3284,7 +3292,7 @@ sub handle_reddit_rss {
     my $s = $reddit_rss->update_rss();
     $self->botspeak($s) if ($s);
 
-    $kernel->delay('handle_reddit_rss_data' => 30);
+    $kernel->delay('handle_reddit_rss_data' => 300);
 }
 
 my $privmsg_time = 0;
