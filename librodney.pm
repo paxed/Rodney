@@ -611,6 +611,22 @@ sub dogrepsrc {
     my $grepstr = shift;
     my $srcfiles = shift || "/opt/nethack/rodney/data/nh343/src/*.[ch] /opt/nethack/rodney/data/nh343/include/*.[ch]";
 
+    my $pathbase = "/opt/nethack/rodney/data/nh343/";
+
+    if ($grepstr =~ m/^file=((src\/|include\/)?([a-zA-Z_*]+(\.[ch*])?))\s(.+)$/) {
+	my ($fullfn, $pathfrag, $fnonly, $fileext, $searchstr) = ($1, $2, $3, $4, $5);
+
+	$srcfiles = "";
+
+	if (!$pathfrag) {
+	    $srcfiles = $pathbase."src/".$fullfn.(!$fileext ? ".c" : "");
+	    $srcfiles .= " ".$pathbase."include/".$fullfn.(!$fileext ? ".h" : "");
+	} else {
+	    $srcfiles = $pathbase.$fullfn.(!$fileext ? ".[ch]" : "");;
+	}
+	$grepstr = $searchstr;
+    }
+
     my $tmpstr = $grepstr;
     $tmpstr =~ s/[^a-zA-Z0-9]//g;
 
