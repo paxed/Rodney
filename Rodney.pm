@@ -1397,7 +1397,7 @@ sub on_d_tick {
 		# someone thought of spamming
 #		elsif ($death =~ /((http)|(www\.)|(ipod)|(tinyurl)|(xrl)/i)) { next; }
 
-		my $infostr = "$dat{'name'} ($dat{'crga'}), $dat{'points'} points, $dat{'death'}";
+		my $infostr = "$dat{'name'} ($dat{'crga'}), $dat{'points'} points, T:$dat{'turns'}, $dat{'death'}";
 		my $oldstyle = xlog2record($line);
 		my $recordmatch;
 		my $twitinfo = $infostr;
