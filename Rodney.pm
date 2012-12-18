@@ -521,6 +521,12 @@ sub mangle_sql_query {
 	    $tmpd = $param_subst{lc($tmpd)} if ( grep { $_ eq lc($tmpd) } keys(%param_subst) );
 	}
 
+	if ($tmpd =~ m/^-([A-Za-z0-9]+)$/) {
+	    my $f_one = $1;
+	    $f_one = $field_renames{$f_one} if ( grep { $_ eq $f_one } keys(%field_renames) );
+	    $tmpd = "hide=".$f_one if ( grep { $_ eq $f_one } @fields );
+	}
+
 	my ($f, $tmpx, $o, $d) = $tmpd =~ /^([A-Za-z0-9_*]+)(([=><!~:]+)(.+))?$/;
 
 	if (defined $o) {

@@ -120,6 +120,7 @@ This is a command to query the xlogfile database via Rodney the IRC bot.
  without an operator and a value are shown in the query results.
  For example: "!lg * hp maxhp"
  To prevent a field from showing up in the result listing, use "hide=field"
+ or prefix the field name with minus: "-deathdate"
 
  It's also possible to display the following aggregate functions of fields:
  "avg", "count", "max", "min", "sum". For example: "!lg * won avg(turns)"
