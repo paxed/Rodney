@@ -3137,17 +3137,16 @@ sub handle_learndb_trigger {
     my ( $self, $channel, $nick, $cmdargs, $output) = @_;
 
     my @arglist = split(/ /, $cmdargs);
-    my $term = $channel.":".(@arglist ? $arglist[0] : $cmdargs);
+    my $term = (@arglist ? $arglist[0] : $cmdargs);
     my @a;
 
     my $retval = 0;
 
     $output = $output || $channel;
     $term =~ s/ /_/g;
-    @a = $learn_db->query($term);
+    @a = $learn_db->query($channel.":".$term);
     if (@a == 0) {
-	$term = "#*:".$arglist[0];
-	@a = $learn_db->query($term);
+	@a = $learn_db->query("#*:".$term);
     }
 
     if (@a > 0) {
