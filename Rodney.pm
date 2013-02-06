@@ -2416,7 +2416,7 @@ sub do_pubcmd_streak {
 	}
     } elsif ($longstreak == 1) {
 	$msg = "$nick has never ascended more than once in a row";
-	$msg .= " (but can still make it a streak)" if ($cancontlong);
+	$msg .= " (but can still make it a streak)" if ($cancont);
 	$msg .= ".";
     } elsif ($games) {
 	$msg = sprintf('%s has not ascended in %d game%s.', $nick, $games, $games == 1 ? '' : 's');
