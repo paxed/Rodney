@@ -1630,7 +1630,7 @@ sub on_ver {
 
     my ( $self, $who ) = @_[ OBJECT, ARG0 ];
     my $nick = ( split /!/, $who )[0];
-    $irc->yield('ctcpreply', $nick, "VERSION", "Oh no, $self->{'Nick'}'s using the touch of death!");
+    $irc->yield('ctcpreply', $nick, "VERSION", "Oh no, $irc->{INFO}{RealNick}'s using the touch of death!");
     $self->bot_priv_msg("CTCP VERSION from $nick");
 }
 
@@ -1639,7 +1639,7 @@ sub on_finger {
 
     my ( $self, $who ) = @_[ OBJECT, ARG0 ];
     my $nick = ( split /!/, $who )[0];
-    $irc->yield('ctcpreply', $nick, "FINGER", "Oh no, $self->{'Nick'}'s using the touch of death!");
+    $irc->yield('ctcpreply', $nick, "FINGER", "Oh no, $irc->{INFO}{RealNick}'s using the touch of death!");
     $self->bot_priv_msg("CTCP FINGER from $nick");
 }
 
@@ -1648,7 +1648,7 @@ sub on_page {
 
     my ( $self, $who ) = @_[ OBJECT, ARG0 ];
     my $nick = ( split /!/, $who )[0];
-    $irc->yield('ctcpreply', $nick, "PAGE", "Oh no, $self->{'Nick'}'s using the touch of death!");
+    $irc->yield('ctcpreply', $nick, "PAGE", "Oh no, $irc->{INFO}{RealNick}'s using the touch of death!");
     $self->bot_priv_msg("CTCP PAGE from $nick");
 }
 
@@ -1668,7 +1668,7 @@ sub mangle_msg_for_trigger {
     $msg =~ s/\s+/ /g;
     $msg =~ s/[!,\.]+$//;
     $msg = paramstr_trim(lc($msg));
-    $msg =~ s/\b\L$self->{'Nick'}\E\b/\$self/g;
+    $msg =~ s/\b\L$irc->{INFO}{RealNick}\E\b/\$self/g;
     $msg =~ tr/ /_/;
     return $msg;
 }
@@ -1696,7 +1696,7 @@ sub on_mode {
     my ( $self, $who, $where, $mode, $nicks ) = @_[ OBJECT, ARG0, ARG1, ARG2, ARG3 ];
 
     my $nick = ( split /!/, $who )[0];
-    $self->{'Nick'} eq $where
+    $irc->{INFO}{RealNick} eq $where
       ? debugprint("[$where] MODE: $mode")
       : debugprint("[$where] MODE: $mode ".($nicks ? $nicks." " : "")."by: $nick");
 }
@@ -1706,7 +1706,7 @@ sub on_notice {
     my ( $self, $who, $msg ) = @_[ OBJECT, ARG0, ARG2 ];
 
     my $nick = ( split /!/, $who )[0];
-    debugprint("[$self->{'Nick'}] NOTICE: $nick: $msg");
+    debugprint("[$irc->{INFO}{RealNick}] NOTICE: $nick: $msg");
 
     $self->bot_priv_msg("NOTICE: <$nick> $msg");
 }
@@ -1726,7 +1726,7 @@ sub on_quit {
     my ( $self, $who, $msg ) = @_[ OBJECT, ARG0, ARG1 ];
 
     my $nick = ( split /!/, $who )[0];
-    debugprint("[$self->{'Nick'}] QUIT: $nick: $msg");
+    debugprint("[$irc->{INFO}{RealNick}] QUIT: $nick: $msg");
     $nick =~ tr/A-Z/a-z/;
     if ((defined $send_msg_id) && ($nick eq $send_msg_id)) { undef $send_msg_id; }
     $seen_db->seen_log($nick, "quit ($msg)");
@@ -1769,7 +1769,14 @@ sub on_nick_taken {
 
     debugprint("on_nick_taken");
 
-    my $nick  = $self->{'AltNick'};
+    my $nick;
+
+    if ($irc->{INFO}{RealNick} eq $self->{'Nick'}) {
+	$nick = $self->{'AltNick'};
+    } else {
+	$nick = $self->{'Nick'} . int(rand(65535));
+    }
+
     $irc->yield('nick', "$nick");
     debugprint("Nick was taken, trying $nick");
     # TODO: ghost $self->{'Nick'} and change nick to that.
@@ -1806,7 +1813,7 @@ sub botspeak {
 			  $msg);
 
 	    if (defined $channel && ($channel =~ m/^#/)) {
-		$self->log_channel_msg($channel, $self->{'Nick'}, $msg);
+		$self->log_channel_msg($channel, $irc->{INFO}{RealNick}, $msg);
 	    }
 
 	}
@@ -1817,7 +1824,7 @@ sub botaction {
     my ($self, $msg, $channel) = @_;
     $irc->yield('sl', "PRIVMSG $channel :\001ACTION $msg\001");
     if (defined $channel && ($channel =~ m/^#/)) {
-	$self->log_channel_msg($channel, $self->{'Nick'}, "*".$self->{'Nick'}." ".$msg);
+	$self->log_channel_msg($channel, $irc->{INFO}{RealNick}, "*".$irc->{INFO}{RealNick}." ".$msg);
     }
 }
 
@@ -2124,7 +2131,7 @@ sub do_pubcmd_seen {
     if ($name) {
 	$name =~ tr/A-Z/a-z/;
 	my $fseen = $seen_db->seen_get($name) || undef;
-	my $mynick = $self->{'Nick'};
+	my $mynick = $irc->{INFO}{RealNick};
 	$mynick =~ tr/A-Z/a-z/;
 
 	if ($name eq $nick) {
@@ -2169,7 +2176,7 @@ sub do_pubcmd_dbquery {
     $term =~ s/ +$//;
     $term =~ tr/ /_/;
 
-    if (lc $self->{'Nick'} eq lc $sendto) {
+    if (lc($irc->{INFO}{RealNick}) eq lc($sendto)) {
 	$self->botspeak("$nick: I already know that.", $channel);
 	return;
     }
@@ -2602,7 +2609,7 @@ sub priv_and_pub_msg {
 	my $text = $3;
 	if (lc($nick) eq lc($target_nick)) {
 	    $self->botspeak("$nick: Tell yourself.", $channel);
-	} elsif (lc($self->{'Nick'}) eq lc($target_nick)) {
+	} elsif (lc($irc->{INFO}{RealNick}) eq lc($target_nick)) {
 	    $self->botspeak("$nick: Got it.", $channel);
 	} else {
 	    $user_messages_db->leave_message($target_nick, $nick, $text);
@@ -3038,7 +3045,7 @@ sub parse_strvariables {
     my $recent_nick = recent_nicks_getrnd();
     $curdate =~ s/\n$//;
 
-    my $selfnick = $self->{'Nick'};
+    my $selfnick = $irc->{INFO}{RealNick};
     my $str = $string;
     $str =~ s/\\\$/\x03/g; # escaped dollar signs
 
@@ -3182,8 +3189,8 @@ sub pub_msg {
     my $nickmatch = 0;
 
     # remove our nick from the beginning of the line.
-    if ($msg !~ /^$self->{'Nick'}\?$/i) {
-	if ($msg =~ m/^\Q$self->{'Nick'}\E\s*[:,]?\s*(.*)$/i) {
+    if ($msg !~ /^$irc->{INFO}{RealNick}\?$/i) {
+	if ($msg =~ m/^\Q$irc->{INFO}{RealNick}\E\s*[:,]?\s*(.*)$/i) {
 	    $msg = $1;
 	    $nickmatch = 1;
 	}
@@ -3514,7 +3521,7 @@ sub on_msg {
     my ( $self, $who, $nicks, $msg ) = @_[ OBJECT, ARG0, ARG1, ARG2 ];
     my $nick = ( split /!/, $who )[0];
 
-    debugprint("[$self->{'Nick'}] <$nick> $msg");
+    debugprint("[$irc->{INFO}{RealNick}] <$nick> $msg");
 
     $nick =~ tr/A-Z/a-z/;
 
