@@ -12,6 +12,7 @@ the one defined in Rodney.pl
 !togglebuglist		   Toggle nethack.org buglist checking on or off
 !togglelogfile		   Toggle logfile checking on or off
 !nick <name>		   Change Rodney's nick to <name>
+!channels		   List channels Rodney is currently on
 !join <channel>		   Make Rodney join <channel>
 !leave <channel>	   Make Rodney leave <channel>
 !part <channel>		   Alias for !leave
