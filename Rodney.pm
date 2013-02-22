@@ -3651,6 +3651,7 @@ sub on_names {
     $who =~ /([^"]*)\s+:([^"]*)\s+/;
     my $chan  = $1;
     my $names = $2;
+    return if (!$names);
     $names =~ tr/A-Z/a-z/;
     $seen_db->seen_setnicks($names, $chan);
 }
