@@ -954,6 +954,12 @@ sub mangle_sql_query {
     return %ret;
 }
 
+sub is_joined_channel {
+    my ($self, $channel) = @_;
+    $channel = lc($channel);
+    return 1 if ( grep {$_ eq $channel } @{$self->{'joined_channels'}} );
+    return 0;
+}
 
 sub is_valid_playername {
     my $s = shift;
@@ -1736,7 +1742,7 @@ sub on_join {
     debugprint("[$where] JOIN: $nick");
 
     if ($nick eq $irc->nick_name()) {
-	push(@{$self->{'joined_channels'}}, $where);
+	push(@{$self->{'joined_channels'}}, lc($where));
 	$self->botspeak("So thou thought thou couldst kill me, fool.", $where);
     }
 
@@ -1788,10 +1794,8 @@ sub botspeak {
 
     my @lines = split("\n", $msg);
 
-    if (defined $channel && ($channel =~ m/^#/)) {
-	if (!( grep {$_ eq $channel } @{$self->{'joined_channels'}} )) {
-	    $irc->yield('join', $channel);
-	}
+    if (defined $channel && ($channel =~ m/^#/) && !$self->is_joined_channel($channel)) {
+	$irc->yield('join', $channel);
     }
 
     foreach my $tmpline (@lines) {
@@ -3392,9 +3396,12 @@ sub admin_msg {
 	    my $newnik = $1;
 	    $irc->yield('nick', "$newnik");
 	}
+	elsif ($msg =~ m/^!channels\s*$/i) {
+	    $self->botspeak("I'm on " . join(", ", @{$self->{'joined_channels'}}), $nick);
+	}
 	elsif ($msg =~ m/^!join\s(\S+)$/i) {
 	    my $chn = $1;
-	    if (defined $chn && ($chn =~ m/^#/) && (!( grep {$_ eq $chn } @{$self->{'joined_channels'}} ))) {
+	    if (defined $chn && ($chn =~ m/^#/) && (!$self->is_joined_channel($chn))) {
 		$irc->yield('join', $chn);
 	    } else {
 		$self->botspeak("Sorry.", $nick);
@@ -3402,7 +3409,7 @@ sub admin_msg {
 	}
 	elsif ($msg =~ m/^!(leave|part)\s(\S+)$/i) {
 	    my $chn = $2;
-	    if (defined $chn && ($chn =~ m/^#/) && (( grep {$_ eq $chn } @{$self->{'joined_channels'}} ))) {
+	    if (defined $chn && ($chn =~ m/^#/) && ($self->is_joined_channel($chn))) {
 		my $tmpa;
 		my $tmpcounter = 0;
 		foreach $tmpa (@{$self->{'joined_channels'}}) {
@@ -3420,7 +3427,7 @@ sub admin_msg {
 	elsif ($msg =~ m/^!me\s(\S+)\s(.+)/i) {
 	    my $chn = $1;
 	    my $message = $2;
-	    if (defined $chn && ($chn =~ m/^#/) && ( grep {$_ eq $chn } @{$self->{'joined_channels'}} )) {
+	    if (defined $chn && ($chn =~ m/^#/) && ($self->is_joined_channel($chn) )) {
 		$self->botaction($message, $chn);
 	    } else {
 		$self->botspeak("Sorry, $chn is not a channel i'm on.", $nick);
