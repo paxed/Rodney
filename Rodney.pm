@@ -1736,8 +1736,6 @@ sub on_quit {
 sub on_join {
     my ( $self, $who, $where ) = @_[ OBJECT, ARG0, ARG1 ];
 
-    my $irc = $_[SENDER]->get_heap();
-
     my $nick = ( split /!/, $who )[0];
     debugprint("[$where] JOIN: $nick");
 
@@ -1770,15 +1768,18 @@ sub on_nick_taken {
     debugprint("on_nick_taken");
 
     my $nick;
+    my $onick = $irc->nick_name();
 
-    if ($irc->{INFO}{RealNick} eq $self->{'Nick'}) {
+    if (lc($onick) eq lc($self->{'Nick'}) && !$self->{'nick_taken_counter'}) {
 	$nick = $self->{'AltNick'};
     } else {
 	$nick = $self->{'Nick'} . int(rand(65535));
     }
 
+    $self->{'nick_taken_counter'}++;
+
     $irc->yield('nick', "$nick");
-    debugprint("Nick was taken, trying $nick");
+    debugprint("Nick $onick was taken, trying $nick");
     # TODO: ghost $self->{'Nick'} and change nick to that.
 }
 
