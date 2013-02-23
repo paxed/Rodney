@@ -198,6 +198,7 @@ sub run {
                 irc_dcc_done     => "on_dcc_done",
                 irc_dcc_start    => "on_dcc_start",
                 irc_dcc_chat     => "on_dcc_chat",
+		ghost_nick	=> "handle_ghosting",
 		d_tick		=> "on_d_tick",
 		database_sync	=> "database_sync",
 		buglist_update	=> "buglist_update",
@@ -1592,7 +1593,7 @@ sub on_connect {
 
     sleep 2;
 
-    $self->botspeak("identify $self->{'Nickpass'}", 'Nickserv');
+    $self->botspeak("identify $self->{'Nickpass'}", 'nickserv');
 
     debugprint("nickserv");
 
@@ -1708,6 +1709,17 @@ sub on_notice {
     my $nick = ( split /!/, $who )[0];
     debugprint("[$irc->{INFO}{RealNick}] NOTICE: $nick: $msg");
 
+    if (lc($nick) eq 'nickserv') {
+	if ($msg =~ m/ has been ghosted.$/) {
+	    $self->{'nick_taken_counter'} = 0;
+	    $irc->yield('nick', $self->{'Nick'});
+	} elsif ($msg =~ m/This nickname is registered./) {
+	    if ($self->{'Nickpass'} && lc($irc->nick_name) eq lc($self->{'Nick'})) {
+		$self->botspeak("identify $self->{'Nickpass'}", 'nickserv');
+	    }
+	}
+    }
+
     $self->bot_priv_msg("NOTICE: <$nick> $msg");
 }
 
@@ -1777,6 +1789,8 @@ sub on_nick_taken {
     }
 
     $self->{'nick_taken_counter'}++;
+
+    $kernel->delay('ghost_nick' => 15);
 
     $irc->yield('nick', "$nick");
     debugprint("Nick $onick was taken, trying $nick");
@@ -3625,6 +3639,16 @@ sub mangle_wiki_datagram_msg {
         $message = $preu." ".shorten_url($url)." ".$postu;
     }
     return $message;
+}
+
+sub handle_ghosting {
+    my ( $self ) = $_[ OBJECT ];
+
+    return if (!$self->{'Nickpass'});
+
+    if (lc($irc->nick_name()) ne lc($self->{'Nick'}) && $self->{'nick_taken_counter'}) {
+	$self->botspeak("ghost $self->{'Nick'} $self->{'Nickpass'}", 'nickserv');
+    }
 }
 
 sub handle_wiki_datagrams {
