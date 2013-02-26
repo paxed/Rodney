@@ -14,8 +14,8 @@ sub new {
 
 sub is_identified {
     my $self = shift;
-    my $nick = shift;
-    return 1 if ( grep {$_ eq $nick} @{$self->{'idlist'}} );
+    my $nick = lc(shift);
+    return 1 if ( grep {lc($_) eq $nick} @{$self->{'idlist'}} );
     return 0;
 }
 
@@ -32,12 +32,12 @@ sub nick_identify {
 
 sub nick_deidentify {
     my $self = shift;
-    my $nick = shift;
+    my $nick = lc(shift);
     my $a;
     my $counter = 0;
 
     foreach $a (@{$self->{'idlist'}}) {
-	if ($a eq $nick) {
+	if (lc($a) eq $nick) {
 	    splice(@{$self->{'idlist'}}, $counter, 1);
 	    return;
 	}

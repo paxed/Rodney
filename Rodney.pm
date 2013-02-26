@@ -1622,6 +1622,10 @@ sub on_nick {
     $nick =~ tr/A-Z/a-z/;
     $seen_db->seen_log($nick, "changed nick to $nnick");
     if ((defined $send_msg_id) && ($nick eq $send_msg_id)) { $send_msg_id = $nnick; }
+    if ($admin_nicks->is_identified($nick)) {
+	$admin_nicks->nick_deidentify($nick);
+	$admin_nicks->nick_identify($nnick);
+    }
     $nnick =~ tr/A-Z/a-z/;
     $seen_db->seen_log($nnick, "changed nick from $nick");
 }
@@ -1741,6 +1745,7 @@ sub on_quit {
     debugprint("[$irc->{INFO}{RealNick}] QUIT: $nick: $msg");
     $nick =~ tr/A-Z/a-z/;
     if ((defined $send_msg_id) && ($nick eq $send_msg_id)) { undef $send_msg_id; }
+    $admin_nicks->nick_deidentify($nick);
     $seen_db->seen_log($nick, "quit ($msg)");
 }
 
