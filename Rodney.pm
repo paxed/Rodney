@@ -1409,6 +1409,7 @@ sub on_d_tick {
 		if (($dat{'points'} < 1000) && ($dat{'death'} =~ /^quit|^escaped/)) { next; }
 		# someone thought of spamming
 #		elsif ($death =~ /((http)|(www\.)|(ipod)|(tinyurl)|(xrl)/i)) { next; }
+		next if ($ignorance->is_ignored('NAO PLR '.$dat{'name'}, ''));
 
 		my $infostr = "$dat{'name'} ($dat{'crga'}), $dat{'points'} points, T:$dat{'turns'}, $dat{'death'}";
 		my $oldstyle = xlog2record($line);
@@ -3359,6 +3360,11 @@ sub admin_msg {
 	elsif ($msg =~ m/^!wiki/) {
 	    my $ngrams = scalar (@wiki_datagram_queue);
 	    $self->botspeak("Wiki recentchanges queue: $ngrams", $nick);
+	}
+	elsif ($msg =~ /^!ignoreplayer\s(\S+)$/) {
+	    my $ign = 'NAO PLR '.$1."\t";
+	    $ignorance->add($ign);
+	    $self->botspeak("Now ignoring player '".$ign."'", $nick);
 	}
 	elsif ($msg =~ m/^!ignore\s(\S+ +\S.*)$/i) {
 	    my $ign = $1;
