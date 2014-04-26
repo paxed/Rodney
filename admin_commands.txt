@@ -9,7 +9,7 @@ the one defined in Rodney.pl
 !ignore <nick> <regexp>	   Ignore a line matching <regexp> from <nick>
 !ignore	       		   Display what Rodney is ignoring
 !rmignore <number>	   Remove ignored line
-!ignoreplayer <nick>	   Ignore a NAO player deaths
+!ignoreplayer <nick> <msg> Ignore a NAO player deaths. msg is regex of the death as spoken by Rodney.
 !togglebuglist		   Toggle nethack.org buglist checking on or off
 !togglelogfile		   Toggle logfile checking on or off
 !nick <name>		   Change Rodney's nick to <name>

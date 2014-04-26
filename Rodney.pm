@@ -1409,12 +1409,13 @@ sub on_d_tick {
 		if (($dat{'points'} < 1000) && ($dat{'death'} =~ /^quit|^escaped/)) { next; }
 		# someone thought of spamming
 #		elsif ($death =~ /((http)|(www\.)|(ipod)|(tinyurl)|(xrl)/i)) { next; }
-		next if ($ignorance->is_ignored('NAO PLR '.$dat{'name'}, ''));
 
 		my $infostr = "$dat{'name'} ($dat{'crga'}), $dat{'points'} points, T:$dat{'turns'}, $dat{'death'}";
 		my $oldstyle = xlog2record($line);
 		my $recordmatch;
 		my $twitinfo = $infostr;
+
+		next if ($ignorance->is_ignored('NAO.PLR.'.$dat{'name'}, $infostr));
 
 		$self->botspeak($infostr);
 		$last_played_game = $oldstyle;
@@ -3361,10 +3362,10 @@ sub admin_msg {
 	    my $ngrams = scalar (@wiki_datagram_queue);
 	    $self->botspeak("Wiki recentchanges queue: $ngrams", $nick);
 	}
-	elsif ($msg =~ /^!ignoreplayer\s(\S+)$/) {
-	    my $ign = 'NAO PLR '.$1."\t";
+	elsif ($msg =~ /^!ignoreplayer\s(\S+) +(\S.*)$/) {
+	    my $ign = 'NAO.PLR.'.$1."\t".$2;
 	    $ignorance->add($ign);
-	    $self->botspeak("Now ignoring player '".$ign."'", $nick);
+	    $self->botspeak("Now ignoring player '".$1."' with message '".$2."'", $nick);
 	}
 	elsif ($msg =~ m/^!ignore\s(\S+ +\S.*)$/i) {
 	    my $ign = $1;
