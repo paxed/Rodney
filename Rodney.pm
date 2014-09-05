@@ -1406,7 +1406,7 @@ sub on_d_tick {
 
 		my %dat = parse_xlogline($line);
 
-		if (($dat{'points'} < 1000) && ($dat{'death'} =~ /^quit|^escaped/)) { next; }
+		if (($dat{'points'} < 1000) && ($dat{'death'} =~ /^quit|^escaped|water/)) { next; }
 		# someone thought of spamming
 #		elsif ($death =~ /((http)|(www\.)|(ipod)|(tinyurl)|(xrl)/i)) { next; }
 
@@ -2923,7 +2923,7 @@ sub is_learndb_trigger {
 }
 
 sub can_edit_learndb {
-    my $nick = shift;
+    my $nick = lc(shift);
     my $term = shift;
     if (is_learndb_trigger($term)) {
 	return 1 if ($admin_nicks->is_identified($nick));
@@ -3351,7 +3351,7 @@ my $parsestr_cmd_args = "";
 sub admin_msg {
     my ( $self, $who, $nicks, $msg ) = @_;
 
-    my $nick = ( split /!/, $who )[0];
+    my $nick = lc(( split /!/, $who )[0]);
 
 	if ($msg =~ m/^!say\s(\S+)\s(.+)$/i) {
 	    my $chn = $1;
@@ -3531,7 +3531,7 @@ sub admin_msg {
 		$self->botspeak("Showing privmsgs to you.", $nick);
 	    }
 	}
-	elsif ($msg =~ m/^!die(\s.+)?$/i) {
+	elsif ($msg =~ m/^!die\s(\S.+)?$/i) {
 	    $self->botspeak(paramstr_trim($1)) if ($1);
 	    kill_bot();
 	}
