@@ -1409,6 +1409,7 @@ sub on_d_tick {
 		if (($dat{'points'} < 1000) && ($dat{'death'} =~ /^quit|^escaped/)) { next; }
 		# someone thought of spamming
 #		elsif ($death =~ /((http)|(www\.)|(ipod)|(tinyurl)|(xrl)/i)) { next; }
+        elsif ($dat{'name'} eq 'JPB01' || $dat{'name'} eq 'Mistress') { next; }
 
 		my $infostr = "$dat{'name'} ($dat{'crga'}), $dat{'points'} points, T:$dat{'turns'}, $dat{'death'}";
 		my $oldstyle = xlog2record($line);
