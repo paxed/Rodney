@@ -4,7 +4,8 @@ use strict;
 use Rodney;
 
 my $chrootpath  = '/opt/nethack/nethack.alt.org';
-my $pub_url     = 'http://alt.org/nethack';
+my $pub_url     = 'https://alt.org/nethack';
+my $pub_ttyrec_archive = 'https://s3.amazonaws.com/altorg/ttyrec';
 my $botdatapath = '/opt/nethack/rodney';
 
   # Initialize new object
@@ -36,17 +37,14 @@ my $botdatapath = '/opt/nethack/rodney';
 #			 SeenDBFile => $botdatapath.'/data/seen.dat',
 			 SeenDBFile => $botdatapath.'/data/seen.db',
 			 MessagesDBFile => $botdatapath.'/data/messages.db',
-			 NHLvlFiles => $chrootpath.'/nh343/var/',
-			 WhereIsDir => $chrootpath.'/nh343/var/whereis/',
 			 Daemonize => 1, # Daemonize the process
 			 CheckLog => 1,  # Monitor logfile
 			 Version  => 'Version is meaningless.',
 			 SpeakLimit => 2,      # prevent ?> flooding
 			 PublicScorePath => $pub_url.'/player.php?player=',
 
-			 CheckBug => 1,  # Monitor bugpage
+			 CheckBug => 0,  # Monitor bugpage
 			 BugCache => $botdatapath.'/data/bugcache.txt',
-			 nh_org_bugpage => 'http://nethack.org/v343/bugs.html',
 
 			 twitteruserpass => '**CHANGE ME**', # username:password
 			 twitteruserpass_asc => '**CHANGE ME**', # username:password
@@ -54,16 +52,13 @@ my $botdatapath = '/opt/nethack/rodney';
 
 			 admin_help_url => $pub_url.'/Rodney/admin_commands.txt',
 
-			 dglInprogPath => $chrootpath.'/dgldir/inprogress-nh343',
 			 PublicDumpPath => $pub_url.'/dumplog',
 			 NHDumpPath => $chrootpath.'/dgldir/dumplog',
 			 PublicRCPath => $pub_url.'/rcfiles',
 			 NHRCPath => $chrootpath.'/dgldir/rcfiles',
-			 nh_logfile => $chrootpath.'/nh343/var/xlogfile',
-
-			 nh_logfile_db => $chrootpath.'/nh343/var/xlogfile.db',
 
 			 xlogfiledb => {
+			     host => 'localhost',
 			     dbtype => 'mysql',
 			     db => 'xlogfiledb',
 			     user => 'CHANGEME',
@@ -76,6 +71,7 @@ my $botdatapath = '/opt/nethack/rodney';
 			     pass => 'CHANGEME'
 			 },
 			 nethackwikidb => {
+			     host => 'localhost',
 			     dbtype => 'mysql',
 			     db => 'nethackwikidb',
 			     user => 'CHANGEME',
@@ -87,20 +83,64 @@ my $botdatapath = '/opt/nethack/rodney';
 			 },
 
 			 ignorancefile => $botdatapath.'/data/ignored.txt',
-			 nh_monsters_file => $botdatapath.'/data/nh343monsters.txt',
-			 nh_objects_file => $botdatapath.'/data/nh343objects.txt',
 			 learn_url => $pub_url.'/Rodney/rodney-learn.php?s=',
 			 userdata_name => $chrootpath.'/dgldir/userdata/',
 			 userdata_dumpname_puburl => $pub_url.'/userdata/%u/dumplog/',
 			 userdata_ttyrec => $chrootpath.'/dgldir/userdata/%U/%u/ttyrec/%T.ttyrec',
 			 userdata_ttyrec_puburl => $pub_url.'/userdata/%u/ttyrec/%T.ttyrec',
-			 nh_savefiledir => $chrootpath.'/nh343/var/save/',
-			 userdata_rcfile_puburl => $pub_url.'/userdata/%u/%u.nh343rc',
 
-			 nh_livelogfile => $chrootpath.'/nh343/var/livelog',
-			 NHRecordFile => $chrootpath.'/nh343/var/record',
-			 nh_dumppath => $chrootpath.'/dgldir/userdata/%U/%u/dumplog/%t.nh343.txt',
-			 nh_dumpurl  => $pub_url.'/userdata/%u/dumplog/%t.nh343.txt'
+                         gamedata_default_version => 'nh360',
+                         gamedata => {
+                             'nh343' => {
+                                 CheckLog => 0,  # Monitor logfile for this game
+                                 NHLvlFiles => $chrootpath.'/nh343/var/',
+                                 WhereIsDir => $chrootpath.'/nh343/var/whereis/',
+                                 nh_org_bugpage => 'http://nethack.org/v343/bugs.html',
+                                 dglInprogPath => $chrootpath.'/dgldir/inprogress-nh343',
+                                 nh_logfile => $chrootpath.'/nh343/var/xlogfile',
+                                 nh_monsters_file => $botdatapath.'/data/nh343monsters.txt',
+                                 nh_objects_file => $botdatapath.'/data/nh343objects.txt',
+                                 nh_savefiledir => $chrootpath.'/nh343/var/save/',
+                                 userdata_rcfile_puburl => $pub_url.'/userdata/%u/%u.nh343rc',
+                                 nh_livelogfile => $chrootpath.'/nh343/var/livelog',
+                                 NHRecordFile => $chrootpath.'/nh343/var/record',
+                                 nh_dumppath => $chrootpath.'/dgldir/userdata/%U/%u/dumplog/%t.nh343.txt',
+                                 nh_dumpurl  => $pub_url.'/userdata/%u/dumplog/%t.nh343.txt',
+                             },
+                             'nh360' => {
+                                 CheckLog => 1,  # Monitor logfile for this game
+                                 NHLvlFiles => $chrootpath.'/nh360/var/',
+                                 WhereIsDir => $chrootpath.'/nh360/var/whereis/',
+                                 nh_org_bugpage => 'http://nethack.org/v360/bugs.html',
+                                 dglInprogPath => $chrootpath.'/dgldir/inprogress-nh360',
+                                 nh_logfile => $chrootpath.'/nh360/var/xlogfile',
+                                 nh_monsters_file => $botdatapath.'/data/nh360monsters.txt',
+                                 nh_objects_file => $botdatapath.'/data/nh360objects.txt',
+                                 nh_savefiledir => $chrootpath.'/nh360/var/save/',
+                                 userdata_rcfile_puburl => $pub_url.'/userdata/%u/%u.nh360rc',
+                                 nh_livelogfile => $chrootpath.'/nh360/var/livelog',
+                                 NHRecordFile => $chrootpath.'/nh360/var/record',
+                                 nh_dumppath => $chrootpath.'/dgldir/userdata/%U/%u/dumplog/%t.nh360.txt',
+                                 nh_dumpurl  => $pub_url.'/userdata/%u/dumplog/%t.nh360.txt',
+                             },
+                             'nh361dev' => {
+                                 CheckLog => 1,  # Monitor logfile for this game
+                                 NHLvlFiles => $chrootpath.'/nh361dev.20170926-1/var/',
+                                 WhereIsDir => $chrootpath.'/nh361dev.20170926-1/var/whereis/',
+                                 nh_org_bugpage => 'http://nethack.org/v360/bugs.html',
+                                 dglInprogPath => $chrootpath.'/dgldir/inprogress-nh361dev.20170926',
+                                 nh_logfile => $chrootpath.'/nh361dev.common/xlogfile',
+                                 nh_monsters_file => $botdatapath.'/data/nh360monsters.txt',
+                                 nh_objects_file => $botdatapath.'/data/nh360objects.txt',
+                                 nh_savefiledir => $chrootpath.'/nh361dev.20170926-1/var/save/',
+                                 userdata_rcfile_puburl => $pub_url.'/userdata/%u/%u.nh361rc',
+                                 nh_livelogfile => $chrootpath.'/nh361dev.common/livelog',
+                                 NHRecordFile => $chrootpath.'/nh361dev.common/record',
+                                 nh_dumppath => $chrootpath.'/dgldir/userdata/%U/%u/dumplog/%t.nh361dev.txt',
+                                 nh_dumpurl  => $pub_url.'/userdata/%u/dumplog/%t.nh361dev.txt',
+                             }
+                         }
+
     );
 
   # Run the bot

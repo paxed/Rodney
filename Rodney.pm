@@ -91,7 +91,7 @@ sub recent_nicks_getrnd {
 
 sub db_connect {
     my ($self) = @_;
-    if (!($dbh = DBI->connect("dbi:".$xlogfiledb->{dbtype}.":".$xlogfiledb->{db}.":localhost",$xlogfiledb->{user},$xlogfiledb->{pass},{AutoCommit => 1, PrintError => 1}))) {
+    if (!($dbh = DBI->connect("dbi:".$xlogfiledb->{dbtype}.":".$xlogfiledb->{db}.":".$xlogfiledb->{host},$xlogfiledb->{user},$xlogfiledb->{pass},{AutoCommit => 1, PrintError => 1}))) {
 	debugprint("Cannot connect to xlogfile db.");
 	undef $dbh;
     }
@@ -125,7 +125,6 @@ sub player_logfile {
 
     db_disconnect();
 
-#    my @lines = split(/\n/, `grep -i '$regex' $self->{'nh_logfile'}`);
     return @lines;
 }
 
@@ -140,8 +139,8 @@ sub new {
 sub run {
     my $self = shift;
 
-    $nh_dumppath = $self->{'nh_dumppath'};
-    $nh_dumpurl  = $self->{'nh_dumpurl'};
+    $nh_dumppath = $self->get_gamedata('nh_dumppath');
+    $nh_dumpurl  = $self->get_gamedata('nh_dumpurl');
 
     $userdata_ttyrec = $self->{'userdata_ttyrec'};
     $userdata_ttyrec_puburl = $self->{'userdata_ttyrec_puburl'};
@@ -151,8 +150,8 @@ sub run {
     $dgldb = $self->{'dgldb'};
     $nethackwikidb = $self->{'nethackwikidb'};
 
-    @nh_monsters = read_textdata_file($self->{'nh_monsters_file'});
-    @nh_objects = read_textdata_file($self->{'nh_objects_file'});
+    @nh_monsters = read_textdata_file($self->get_gamedata('nh_monsters_file'));
+    @nh_objects = read_textdata_file($self->get_gamedata('nh_objects_file'));
 
     $ignorance->init($self->{'ignorancefile'});
     $ignorance->load();
@@ -265,8 +264,14 @@ sub bot_start {
     debugprint("connect...");
     $kernel->delay( 'reconnect', 20 );
     debugprint("reconnect delay");
-    $self->setup_tail() if ($self->{'CheckLog'} > 0);
+
     debugprint("setup_tail");
+    if ($self->{'CheckLog'} > 0) {
+        foreach my $gv (keys %{$self->{'gamedata'}}) {
+            $self->setup_tail($gv) if ($self->get_gamedata('CheckLog') > 0);
+        }
+    }
+
     $learn_db->init($self->{'LearnDBFile'});
     debugprint("learn_db");
     $seen_db->init($self->{'SeenDBFile'});
@@ -275,9 +280,9 @@ sub bot_start {
     $user_messages_db->init($self->{'MessagesDBFile'});
     debugprint("messages_db");
 
-    $buglist_db->init($self->{'BugCache'}, $self->{'nh_org_bugpage'});
+    $buglist_db->init($self->{'BugCache'}, $self->get_gamedata('nh_org_bugpage'));
 
-    $reddit_rss->init('http://reddit.com/r/nethack.rss', $self->{'RSS_tstamp'});
+    $reddit_rss->init('https://reddit.com/r/nethack.rss', $self->{'RSS_tstamp'});
     $kernel->delay('handle_reddit_rss_data' => 300);
 
     $kernel->delay('d_tick' => 10) if ($self->{'CheckLog'} > 0);
@@ -308,7 +313,7 @@ sub shorten_url {
 	$sth->execute();
 	my $id = $dbh->{'mysql_insertid'};
 	$dbh->disconnect();
-	$url = 'http://url.alt.org/?'.$id;
+	$url = 'https://url.alt.org/?'.$id;
     } else {
 	debugprint("Url shortening db error.") if (!$dbh);
     }
@@ -420,6 +425,7 @@ sub mangle_sql_query {
 	);
 
     my %param_subst = (
+	"36" => "version=3.6.0",
         "won" => "death=ascended",
         "!won" => "death!=ascended*",
 	"ascended" => "death=ascended",
@@ -1006,7 +1012,7 @@ sub paramstr_playername {
 sub paramstr_iswikipage {
     my $str = shift || "";
     if (length($str) > 0) {
-        my $db = DBI->connect("dbi:".$nethackwikidb->{dbtype}.":".$nethackwikidb->{db}.":localhost",
+        my $db = DBI->connect("dbi:".$nethackwikidb->{dbtype}.":".$nethackwikidb->{db}.":".$nethackwikidb->{host},
                               $nethackwikidb->{user}, $nethackwikidb->{pass},
                               {AutoCommit => 1, PrintError => 1});
         if ($db->err()) { debugprint("$DBI::errstr"); return ""; }
@@ -1025,7 +1031,7 @@ sub paramstr_iswikipage {
 sub paramstr_wikipage {
     my $str = shift || "";
     if (length($str) > 0) {
-        my $db = DBI->connect("dbi:".$nethackwikidb->{dbtype}.":".$nethackwikidb->{db}.":localhost",
+        my $db = DBI->connect("dbi:".$nethackwikidb->{dbtype}.":".$nethackwikidb->{db}.":".$nethackwikidb->{host},
                               $nethackwikidb->{user}, $nethackwikidb->{pass},
                               {AutoCommit => 1, PrintError => 1});
         if ($db->err()) { debugprint("$DBI::errstr"); return ""; }
@@ -1043,7 +1049,7 @@ sub paramstr_wikipage {
 sub paramstr_nwikipages {
     my $str = shift || "";
     if (length($str) > 0) {
-        my $db = DBI->connect("dbi:".$nethackwikidb->{dbtype}.":".$nethackwikidb->{db}.":localhost",
+        my $db = DBI->connect("dbi:".$nethackwikidb->{dbtype}.":".$nethackwikidb->{db}.":".$nethackwikidb->{host},
                               $nethackwikidb->{user}, $nethackwikidb->{pass},
                               {AutoCommit => 1, PrintError => 1});
         if ($db->err()) { debugprint("$DBI::errstr"); return ""; }
@@ -1079,18 +1085,24 @@ sub player_list {
     my $fmask = shift || "";
     my @return;
     my @files;
+    my @tmpf;
 
     $fmask = '^.*'.$fmask.'.*:\d+-\d+-\d+\.\d+:\d+:\d+\.ttyrec$';
 
-    @files = find_files($self->{'dglInprogPath'}, $fmask);
+    foreach my $gv (keys %{$self->{'gamedata'}}) {
+        @files = find_files($self->get_gamedata('dglInprogPath', $gv), $fmask);
 
-    if ($#files >= 0) {
-	my $c;
-	my $count = 0;
+        if ($#files >= 0) {
+            my @xfiles = (@tmpf, @files);
+            @tmpf = @xfiles;
+        }
+    }
 
-	my @tmpf = sort { lc $a cmp lc $b } @files;
+    if ($#tmpf >= 0) {
 
-	foreach (@tmpf) {
+	my @xtmpf = sort { lc $a cmp lc $b } @tmpf;
+
+	foreach (@xtmpf) {
 	    my ($b) = /^([^:]*).*/;
 	    push @return, $b;
 	}
@@ -1119,7 +1131,7 @@ sub whereis_players {
 
     foreach (@players) {
 	next if ((defined $plr) && !(lc($_) eq $plr));
-	my $whereisfile = $self->{'WhereIsDir'}.$_.'.whereis';
+	my $whereisfile = $self->get_gamedata('WhereIsDir').$_.'.whereis';
 	open(WHEREISFILE, $whereisfile) || next;
 	my @whereisdata = <WHEREISFILE>;
 	close(WHEREISFILE);
@@ -1361,111 +1373,144 @@ sub asc_data {
 }
 
 # tail events
-
-my $curpos;
-my $last_played_game;
-
-my $livelog_pos;
-
-my $LOGFILE;
-my $LIVELOGFILE;
+my %taildata;
 
 sub setup_tail {
     my $self = shift;
-    my $fname = $self->{'nh_logfile'};
-    my $livefname = $self->{'nh_livelogfile'};
-    debugprint("setup_tail");
+    my $gamever = shift || $self->get_gamever();
+    my $fname = $self->get_gamedata('nh_logfile', $gamever);
+    my $livefname = $self->get_gamedata('nh_livelogfile', $gamever);
+    debugprint("setup_tail: $gamever");
+    my $LOGFILE;
+    my $curpos;
+    my $LIVELOGFILE;
+    my $livelog_pos;
     if (open($LOGFILE,$fname)) {
 	seek($LOGFILE,0,2);
 	$curpos = tell($LOGFILE);
+	debugprint("Opened $fname for tail.");
+
+        $taildata{$gamever}{'LOGFILE'} = $LOGFILE;
+        $taildata{$gamever}{'curpos'} = $curpos;
+	debugprint("setup_tail LOGFILE: $fname");
     } else {
 	debugprint("Can't open file $fname, logfile checking disabled.");
-	$self->{'CheckLog'} = 0;
+	$self->{'gamedata'}->{'CheckLog'} = 0;
     }
 
     if (open($LIVELOGFILE,$livefname)) {
 	seek($LIVELOGFILE,0,2);
 	$livelog_pos = tell($LIVELOGFILE);
+
+        $taildata{$gamever}{'LIVELOGFILE'} = $LIVELOGFILE;
+        $taildata{$gamever}{'livelog_pos'} = $livelog_pos;
+	debugprint("setup_tail LIVELOGFILE: $fname");
     } else {
 	debugprint("Can't open file $livefname, livelog checking disabled.");
-	$self->{'CheckLog'} = 0;
+	$self->{'gamedata'}{$gamever}{'CheckLiveLog'} = 0;
     }
 }
 
+sub handle_tail {
+    my ($self, $gamever) = @_;
+
+    my $line;
+    my $LOGFILE = $taildata{$gamever}{'LOGFILE'};
+    my $curpos = $taildata{$gamever}{'curpos'};
+
+    my $LIVELOGFILE = $taildata{$gamever}{'LIVELOGFILE'};
+    my $livelog_pos = $taildata{$gamever}{'livelog_pos'};
+
+    my $gv = '';
+
+    $gv = '['.$gamever.'] ' if ($gamever ne $self->{'gamedata_default_version'});
+
+    return if (!$LOGFILE);
+
+    for ($curpos = tell($LOGFILE); $line = <$LOGFILE> ; $curpos = tell($LOGFILE)) {
+        my $recordno = 0;
+        my $counter = 0;
+
+        next if (!$line);
+
+        $line =~ s/\n//;
+
+        my %dat = parse_xlogline($line);
+
+        if (($dat{'points'} < 1000) && ($dat{'death'} =~ /^quit|^escaped/)) { next; }
+        # someone thought of spamming
+        # elsif ($death =~ /((http)|(www\.)|(ipod)|(tinyurl)|(xrl)/i)) { next; }
+
+        $dat{'death'} .= ", while " . $dat{'while'} if (defined($dat{'while'}) && $dat{'while'} !~ /^\s*$/);
+
+        my $infostr = "$gv$dat{'name'} ($dat{'crga'}), $dat{'points'} points, T:$dat{'turns'}, $dat{'death'}";
+        my $oldstyle = xlog2record($line);
+        my $recordmatch;
+        my $twitinfo = $infostr;
+
+        next if ($ignorance->is_ignored('NAO.PLR.'.$dat{'name'}, $infostr));
+
+        $self->botspeak($infostr);
+        $taildata{$gamever}{'last_played_game'} = $oldstyle;
+
+        open(RECORDFILE, $self->get_gamedata('NHRecordFile', $gamever)) || die ("Can't open file");
+        while (<RECORDFILE>) {
+            $counter++;
+            $recordmatch = $_;
+            $recordmatch =~ s/\n$//;
+            if ($recordmatch eq $oldstyle) { $recordno = $counter; }
+        }
+        if ($recordno) {
+            $self->botspeak("$gv$dat{'name'} reaches #$recordno on the top 2000 list.");
+        }
+        close(RECORDFILE);
+
+        if ($dat{'death'} =~ /^ascended$/) {
+
+            my $dumpfile = fixstring($self->get_gamedata('nh_dumppath', $gamever), %dat);
+            if (-e "$dumpfile") {
+                my $url = fixstring($self->get_gamedata('nh_dumpurl', $gamever), %dat);
+                $self->botspeak($url);
+                $twitinfo = "$dat{'name'} $dat{'death'}: $url";
+            }
+
+            #if (($self->{'use_twitter'} == 1) && (-e "/usr/bin/curl")) {
+            #	`/usr/bin/curl --max-time 3 -u "$self->{'twitteruserpass_asc'}" -d status="$twitinfo" http://twitter.com/statuses/update.xml`;
+            #}
+
+        }
+        #if (($self->{'use_twitter'} == 1) && (-e "/usr/bin/curl")) {
+        #    `/usr/bin/curl --max-time 3 -u "$self->{'twitteruserpass'}" -d status="$twitinfo" http://twitter.com/statuses/update.xml`;
+        #}
+    }
+    seek($LOGFILE,$curpos,0);
+    $taildata{$gamever}{'LOGFILE'} = $LOGFILE;
+    $taildata{$gamever}{'curpos'} = $curpos;
+
+    return if (!$LIVELOGFILE);
+
+    for ($livelog_pos = tell($LIVELOGFILE); $line = <$LIVELOGFILE> ; $livelog_pos = tell($LIVELOGFILE)) {
+        next if (!$line);
+        $line =~ s/\n//;
+        if ($line =~ m/^.+$/) {
+            my %dat = parse_xlogline($line);
+            my $infostr = "$gv$dat{'player'} ($dat{'crga'}) $dat{'message'}, on turn $dat{'turns'}";
+            $self->botspeak($infostr);
+        }
+    }
+    seek($LIVELOGFILE,$livelog_pos,0);
+    $taildata{$gamever}{'LIVELOGFILE'} = $LIVELOGFILE;
+    $taildata{$gamever}{'livelog_pos'} = $livelog_pos;
+}
+
 sub on_d_tick {
-	my ( $self ) = $_[ OBJECT ];
-	my $line;
+    my ( $self ) = $_[ OBJECT ];
 
-	for ($curpos = tell($LOGFILE); $line = <$LOGFILE> ; $curpos = tell($LOGFILE)) {
-		my $recordno = 0;
-		my $counter = 0;
+    foreach my $gv (keys %{$self->{'gamedata'}}) {
+        $self->handle_tail($gv) if ($self->get_gamedata('CheckLog', $gv) > 0);
+    }
 
-		if (!$line) { next; }
-
-		$line =~ s/\n//;
-
-		my %dat = parse_xlogline($line);
-
-		if (($dat{'points'} < 1000) && ($dat{'death'} =~ /^quit|^escaped/)) { next; }
-		# someone thought of spamming
-#		elsif ($death =~ /((http)|(www\.)|(ipod)|(tinyurl)|(xrl)/i)) { next; }
-
-		my $infostr = "$dat{'name'} ($dat{'crga'}), $dat{'points'} points, T:$dat{'turns'}, $dat{'death'}";
-		my $oldstyle = xlog2record($line);
-		my $recordmatch;
-		my $twitinfo = $infostr;
-
-		next if ($ignorance->is_ignored('NAO.PLR.'.$dat{'name'}, $infostr));
-
-		$self->botspeak($infostr);
-		$last_played_game = $oldstyle;
-
-		open(RECORDFILE, $self->{'NHRecordFile'}) || die ("Can't open file");
-		while (<RECORDFILE>) {
-			$counter++;
-			$recordmatch = $_;
-			$recordmatch =~ s/\n$//;
-			if ($recordmatch eq $oldstyle) { $recordno = $counter; }
-		}
-		if ($recordno) {
-			$self->botspeak("$dat{'name'} reaches #$recordno on the top 2000 list.");
-		}
-		close(RECORDFILE);
-
-		if ($dat{'death'} =~ /^ascended$/) {
-
-		    my $dumpfile = fixstring($self->{'nh_dumppath'}, %dat);
-		    if (-e "$dumpfile") {
-			my $url = fixstring($self->{'nh_dumpurl'}, %dat);
-			$self->botspeak($url);
-			$twitinfo = "$dat{'name'} $dat{'death'}: $url";
-		    }
-
-		    #if (($self->{'use_twitter'} == 1) && (-e "/usr/bin/curl")) {
-		    #	`/usr/bin/curl --max-time 3 -u "$self->{'twitteruserpass_asc'}" -d status="$twitinfo" http://twitter.com/statuses/update.xml`;
-		    #}
-
-		}
-		#if (($self->{'use_twitter'} == 1) && (-e "/usr/bin/curl")) {
-		#    `/usr/bin/curl --max-time 3 -u "$self->{'twitteruserpass'}" -d status="$twitinfo" http://twitter.com/statuses/update.xml`;
-		#}
-	}
-	seek($LOGFILE,$curpos,0);
-
-
-	for ($livelog_pos = tell($LIVELOGFILE); $line = <$LIVELOGFILE> ; $livelog_pos = tell($LIVELOGFILE)) {
-		if (!$line) { next; }
-		$line =~ s/\n//;
-		if ($line =~ m/^.+$/) {
-		    my %dat = parse_xlogline($line);
-		    my $infostr = "$dat{'player'} ($dat{'crga'}) $dat{'message'}, on turn $dat{'turns'}";
-		    $self->botspeak($infostr);
-		}
-	}
-	seek($LIVELOGFILE,$livelog_pos,0);
-
-
-	$kernel->delay('d_tick' => 3);
+    $kernel->delay('d_tick' => 3);
 }
 
 sub userdata_name {
@@ -1492,7 +1537,7 @@ sub dumplog_url {
     my $userdir = "$directory/".substr($name, 0,1)."/$name/dumplog/";
 
     opendir DIR, $userdir;
-    my @files = sort grep {/^\d+\.nh343\.txt$/} readdir DIR;
+    my @files = sort grep {/^\d+\.nh360\.txt$/} readdir DIR;
 
     if (@files) {
 	my %namehash = (name=>$name);
@@ -1520,7 +1565,7 @@ sub highscore_query_nick {
 	}
     }
 
-    open(RECORDFILE, $self->{'NHRecordFile'}) || die ("Can't open file");
+    open(RECORDFILE, $self->get_gamedata('NHRecordFile')) || die ("Can't open file");
     while (<RECORDFILE>) {
  	$counter++;
 	$line = $_;
@@ -2482,10 +2527,10 @@ sub do_pubcmd_gamenum {
     } else {
 	my $line;
 	if ($gamenum > 0) {
-	    $line = `head -$gamenum "$self->{'nh_logfile'}" | tail -1`;
+	    $line = `head -$gamenum "$self->get_gamedata('nh_logfile')" | tail -1`;
 	} elsif ($gamenum < 0) {
 	    my $tmpgamenum = -$gamenum;
-	    $line = `tail -$tmpgamenum "$self->{'nh_logfile'}" | head -1`;
+	    $line = `tail -$tmpgamenum "$self->get_gamedata('nh_logfile')" | head -1`;
 	}
 	$line =~ s/\n+$//;
 	if ($line =~ m/version=/) {
@@ -2498,7 +2543,9 @@ sub do_pubcmd_gamenum {
 }
 
 sub do_pubcmd_lastgame {
-    my ($self, $channel) = @_;
+    my ($self, $channel, $gamever) = @_;
+
+    my $last_played_game = $taildata{$self->get_gamever($gamever)}{'last_played_game'};
 
     if ($last_played_game) {
 	foreach $a (demunge_recordline($last_played_game, 5)) {
@@ -2537,12 +2584,27 @@ sub do_pubcmd_players {
     }
 }
 
+sub get_gamever {
+    my ($self, $gamever) = @_;
+    my $gv = $gamever || $self->{'gamedata_default_version'};
+    return $gv;
+}
+
+sub get_gamedata {
+    my ($self, $data, $gamever) = @_;
+
+    my $gv = $self->get_gamever($gamever);
+
+    #debugprint("get_gamedata: $gv, $data");
+
+    return $self->{'gamedata'}{$gv}{$data};
+}
 
 sub do_pubcmd_lvlfiles {
     my ($self, $channel, $name) = @_;
     my $username = $name;
     my $findname = '^5'.$username.'\.[0-9]+$';
-    my @files = find_files($self->{'NHLvlFiles'}, $findname);
+    my @files = find_files($self->get_gamedata('NHLvlFiles'), $findname);
 
     if ($#files < 0) {
 	$self->botspeak("No level lock files for user $name", $channel);
@@ -2556,7 +2618,7 @@ sub do_pubcmd_savefiles {
     my ($self, $channel, $name) = @_;
     my $username = $name;
     my $findname = '^5'.$username.'\.gz$';
-    my $savedir = $self->{'nh_savefiledir'};
+    my $savedir = $self->get_gamedata('nh_savefiledir');
     my @files = find_files($savedir, $findname);
 
     if ($#files < 0) {
@@ -2577,7 +2639,7 @@ sub do_pubcmd_rcfile {
     };
 
     my %namehash = (name=>$name);
-    my $rc = fixstring($self->{'userdata_rcfile_puburl'}, %namehash);
+    my $rc = fixstring($self->get_gamedata('userdata_rcfile_puburl'), %namehash);
     $self->botspeak($rc, $channel);
 }
 
@@ -3476,7 +3538,7 @@ sub admin_msg {
 	    $self->botspeak("Throttle,  priv: $privmsg_throttle, pub: $pubmsg_throttle", $nick);
 	}
 	elsif ($msg =~ m/^!bones$/i) {
-	    my $bonefiledir = $self->{'NHLvlFiles'};
+	    my $bonefiledir = $self->get_gamedata('NHLvlFiles');
 	    $bonefiledir =~ s/\/$//;
 	    my @bonefiles = `ls -al $bonefiledir/bon* | nl`;
 	    my $a;
