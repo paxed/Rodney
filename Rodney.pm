@@ -1245,6 +1245,7 @@ sub log_data {
     my $deaths = 0;
     my $quits = 0;
     my $escapes = 0;
+    my $disgraces = 0;
     my $dbdata;
 
     $nick =~ tr/A-Z/a-z/;
@@ -1262,7 +1263,8 @@ sub log_data {
 
 	    $ascended++ if ($dbdata->{death} =~ /^ascended$/);
 	    $quits++ if ($dbdata->{death} =~ /^quit/);
-	    $escapes++ if ($dbdata->{death} =~ /^escaped/);
+	    $escapes++ if ($dbdata->{death} =~ /^escaped$/);
+	    $disgraces++ if ($dbdata->{death} =~ /^escaped\s\(in\scelestial\sdisgrace\)$/);
 	    $score = $dbdata->{points} if ($dbdata->{points} > $score);
 	    $deaths += $dbdata->{deaths};
     }
@@ -1282,12 +1284,13 @@ sub log_data {
 	if ($deaths > 0) {
 	    my $lifesaved = ($deaths + $quits + $escapes + $ascended - $games);
 	    $deaths = ($deaths - $lifesaved) if ($lifesaved > 0);
-	    $ret = $ret . ", died $deaths" if ($deaths > 0);
+	    $ret = $ret . ", died $deaths";
 	    $ret = $ret . ", lifesaved $lifesaved" if ($lifesaved > 0);
 	}
 	$ret = $ret . ", quit $quits" if ($quits > 0);
 	$ret = $ret . ", escaped $escapes" if ($escapes > 0);
-	$ret = $ret . " time".(($deaths+$escapes+$quits+$ascended) == 1 ? "" : "s");
+	$ret = $ret . ", escaped in disgrace $disgraces"; if ($disgraces > 0);
+	$ret = $ret . " time".(($deaths+$escapes+$quits+$ascended+$disgraces) == 1 ? "" : "s");
 
 	$retstr = $ret;
     } else {
