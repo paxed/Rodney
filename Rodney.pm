@@ -1537,7 +1537,7 @@ sub dumplog_url {
     my $userdir = "$directory/".substr($name, 0,1)."/$name/dumplog/";
 
     opendir DIR, $userdir;
-    my @files = sort grep {/^\d+\.nh360\.txt$/} readdir DIR;
+    my @files = sort grep {/^\d+\.nh\w+\.txt$/} readdir DIR;
 
     if (@files) {
 	my %namehash = (name=>$name);
